@@ -31,5 +31,22 @@ Then go to http://localhost:8000 to see the service documentation.
 ## Endpoints
 - /v1/about
 
+## Setup for development
+Use a virtualenv if possible:
+
+```bash
+python -m venv venv
+```
+
+Then enter the virtualenv and install the dependencies:
+
+```bash
+source venv/bin/activate
+pip install -r requirements-dev.txt
+pre-commit install -f
+cp .env.sample .env
+./run_tests.sh
+```
+
 ## Contributors
 [See contributors](https://github.com/safe-global/safe-locking-service/graphs/contributors)
