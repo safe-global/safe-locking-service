@@ -1,5 +1,5 @@
 from .base import *  # noqa
-from .base import env
+from .base import REDIS_URL, env
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -12,6 +12,21 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["*"])
 # ------------------------------------------------------------------------------
 # DATABASES['default'] = env.db('DATABASE_URL')  # noqa F405
 DATABASES["default"]["ATOMIC_REQUESTS"] = False  # noqa F405
+
+# CACHES
+# ------------------------------------------------------------------------------
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # Mimicing memcache behavior.
+            # http://niwinz.github.io/django-redis/latest/#_memcached_exceptions_behavior
+            "IGNORE_EXCEPTIONS": True,
+        },
+    }
+}
 
 # SECURITY
 # ------------------------------------------------------------------------------
@@ -26,6 +41,10 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 # ------------------------------------------------------------------------------
 # Django Admin URL regex.
 ADMIN_URL = env("DJANGO_ADMIN_URL", default="admin/")
+
+# CELERY
+# ------------------------------------------------------------------------------
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=REDIS_URL)
 
 # Gunicorn
 # ------------------------------------------------------------------------------

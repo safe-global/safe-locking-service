@@ -28,6 +28,13 @@ services:
       - nginx-shared:/nginx
     command: docker/web/run_web.sh
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    command:
+      - --appendonly yes
+
   rabbitmq:
     image: rabbitmq:alpine
     ports:

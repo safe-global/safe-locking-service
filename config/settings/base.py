@@ -348,5 +348,7 @@ SWAGGER_SETTINGS = {
     },
 }
 
+REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
+
 # Ethereum
 ETHEREUM_NODE_URL = env("ETHEREUM_NODE_URL", default=None)
