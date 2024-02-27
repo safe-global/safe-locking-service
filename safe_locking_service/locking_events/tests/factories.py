@@ -27,32 +27,32 @@ class LockEventFactory(DjangoModelFactory):
     class Meta:
         model = LockEvent
 
-    holder = LazyFunction(lambda: Account.create().address)
+    timestamp = LazyFunction(timezone.now)
     ethereum_tx = SubFactory(EthereumTxFactory)
-    amount = fuzzy.FuzzyInteger(0, 1000)
     log_index = Sequence(lambda n: n)
-    block_timestamp = LazyFunction(timezone.now)
+    amount = fuzzy.FuzzyInteger(0, 1000)
+    holder = LazyFunction(lambda: Account.create().address)
 
 
 class UnlockEventFactory(DjangoModelFactory):
     class Meta:
         model = UnlockEvent
 
-    holder = LazyFunction(lambda: Account.create().address)
+    timestamp = LazyFunction(timezone.now)
     ethereum_tx = SubFactory(EthereumTxFactory)
-    unlock_index = Sequence(lambda n: n + 1)
-    amount = fuzzy.FuzzyInteger(0, 1000)
     log_index = Sequence(lambda n: n)
-    block_timestamp = LazyFunction(timezone.now)
+    holder = LazyFunction(lambda: Account.create().address)
+    amount = fuzzy.FuzzyInteger(0, 1000)
+    unlock_index = Sequence(lambda n: n + 1)
 
 
 class WithdrawnEventFactory(DjangoModelFactory):
     class Meta:
         model = WithdrawnEvent
 
-    holder = LazyFunction(lambda: Account.create().address)
+    timestamp = LazyFunction(timezone.now)
     ethereum_tx = SubFactory(EthereumTxFactory)
-    unlock_index = SubFactory(UnlockEventFactory)
-    amount = fuzzy.FuzzyInteger(0, 1000)
     log_index = Sequence(lambda n: n)
-    block_timestamp = LazyFunction(timezone.now)
+    holder = LazyFunction(lambda: Account.create().address)
+    amount = fuzzy.FuzzyInteger(0, 1000)
+    unlock_index = SubFactory(UnlockEventFactory)

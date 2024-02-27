@@ -1,10 +1,9 @@
 from django.db import models
 
-from gnosis.eth.django.models import EthereumAddressV2Field, Keccak256Field
+from gnosis.eth.django.models import EthereumAddressV2Field, Keccak256Field, Uint96Field
 
 
 class EthereumTx(models.Model):
-    created = models.DateTimeField(auto_now_add=True)
     tx_hash = Keccak256Field(primary_key=True)
     block_hash = Keccak256Field()
     block_number = models.PositiveIntegerField()
@@ -17,19 +16,26 @@ class EthereumTx(models.Model):
 class CommonEvent(models.Model):
     """
     Abstract model that defines generic fields of a locking event. (Abstract model doesn't create tables)
-    The block timestamp is stored also in this model to improve the query performance.
+    The timestamp is stored also in this model to improve the query performance.
     """
 
     id = models.AutoField(primary_key=True)
-    created = models.DateTimeField(auto_now_add=True)
-    holder = EthereumAddressV2Field()
+    timestamp = models.DateTimeField()
     ethereum_tx = models.ForeignKey(EthereumTx, on_delete=models.CASCADE)
-    amount = models.PositiveIntegerField()
     log_index = models.PositiveIntegerField()
-    block_timestamp = models.DateTimeField()
+    holder = EthereumAddressV2Field()
+    amount = Uint96Field()
 
     class Meta:
         abstract = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=["ethereum_tx", "log_index"], name="unique_ethereum_tx_log_index"
+            )
+        ]
+
+    def __str__(self):
+        return f"timestamp={self.timestamp} tx-hash={self.ethereum_tx_id}  log_index={self.log_index} holder={self.holder}"
 
 
 class LockEvent(CommonEvent):
@@ -38,9 +44,6 @@ class LockEvent(CommonEvent):
     """
 
     pass
-
-    def __str__(self):
-        return f"Holder {self.holder} locked {self.amount} Safe tokens"
 
 
 class UnlockEvent(CommonEvent):
@@ -57,9 +60,6 @@ class UnlockEvent(CommonEvent):
             )
         ]
 
-    def __str__(self):
-        return f"Holder {self.holder} unlocked {self.amount} Safe tokens"
-
 
 class WithdrawnEvent(CommonEvent):
     """
@@ -74,6 +74,3 @@ class WithdrawnEvent(CommonEvent):
                 fields=["holder", "unlock_index"], name="unique_withdrawn_event_index"
             )
         ]
-
-    def __str__(self):
-        return f"Holder {self.holder} withdrawn {self.amount} Safe tokens"
