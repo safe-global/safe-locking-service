@@ -35,7 +35,7 @@ class CommonEvent(models.Model):
         ]
 
     def __str__(self):
-        return f"timestamp={self.timestamp} tx-hash={self.ethereum_tx_id}  log_index={self.log_index} holder={self.holder}"
+        return f"timestamp={self.timestamp} tx-hash={self.ethereum_tx_id} log_index={self.log_index} holder={self.holder} amount={self.amount}"
 
 
 class LockEvent(CommonEvent):
@@ -44,6 +44,9 @@ class LockEvent(CommonEvent):
     """
 
     pass
+
+    def __str__(self):
+        return "LockEvent: " + super().__str__()
 
 
 class UnlockEvent(CommonEvent):
@@ -60,6 +63,9 @@ class UnlockEvent(CommonEvent):
             )
         ]
 
+    def __str__(self):
+        return "UnlockEvent: " + super().__str__()
+
 
 class WithdrawnEvent(CommonEvent):
     """
@@ -74,3 +80,6 @@ class WithdrawnEvent(CommonEvent):
                 fields=["holder", "unlock_index"], name="unique_withdrawn_event_index"
             )
         ]
+
+    def __str__(self):
+        return "WithdrawnEvent: " + super().__str__()
