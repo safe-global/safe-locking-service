@@ -83,3 +83,12 @@ class WithdrawnEvent(CommonEvent):
 
     def __str__(self):
         return "WithdrawnEvent: " + super().__str__()
+
+
+class StatusEventsIndexer(models.Model):
+    contract = EthereumAddressV2Field(primary_key=True, unique=True)
+    deployed_block = models.PositiveIntegerField()
+    last_indexed_block = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"EventIndexer: address={self.contract} deployed_block={self.deployed_block} last_indexed_block={self.last_indexed_block} "

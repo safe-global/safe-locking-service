@@ -352,3 +352,21 @@ REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 
 # Ethereum
 ETHEREUM_NODE_URL = env("ETHEREUM_NODE_URL", default=None)
+
+# Event indexing
+SAFE_LOCKING_CONTRACT_ADDRESS = env("SAFE_LOCKING_CONTRACT_ADDRESS", default=None)
+ETH_EVENTS_BLOCK_PROCESS_LIMIT = env.int(
+    "ETH_EVENTS_BLOCK_PROCESS_LIMIT", default=50
+)  # Initial number of blocks to process together when searching for events. It will be auto increased. 0 == no limit.
+ETH_EVENTS_BLOCK_PROCESS_LIMIT_MAX = env.int(
+    "ETH_EVENTS_BLOCK_PROCESS_LIMIT_MAX", default=0
+)  # Maximum number of blocks to process together when searching for events. 0 == no limit.
+ETH_EVENTS_BLOCKS_TO_REINDEX_AGAIN = env.int(
+    "ETH_EVENTS_BLOCKS_TO_REINDEX_AGAIN", default=2
+)  # Blocks to reindex again every indexer run when service is synced. Useful for RPCs not reliable
+ETH_EVENTS_GET_LOGS_CONCURRENCY = env.int(
+    "ETH_EVENTS_GET_LOGS_CONCURRENCY", default=20
+)  # Number of concurrent requests to `getLogs`
+ETH_EVENTS_UPDATED_BLOCK_BEHIND = env.int(
+    "ETH_EVENTS_UPDATED_BLOCK_BEHIND", default=24 * 60 * 60 // 15
+)  # Number of blocks to consider an address 'almost updated'.
