@@ -49,17 +49,26 @@ class SafeLockingEventsIndexer(EventsContractIndexer):
             ethereum_tx, created = EthereumTx().create_from_decoded_event(
                 event, block_timestamp
             )
+            lock_event_instances = []
+            unlock_event_instances = []
+            withdrawn_event_instances = []
             if event["event"] in "Locked":
-                LockEvent().create_from_decoded_event(
-                    event, ethereum_tx, block_timestamp
+                lock_event_instances.append(
+                    LockEvent.create_instance_from_decoded_event(
+                        event, ethereum_tx, block_timestamp
+                    )
                 )
             elif event["event"] in "Unlocked":
-                UnlockEvent().create_from_decoded_event(
-                    event, ethereum_tx, block_timestamp
+                unlock_event_instances.append(
+                    UnlockEvent.create_instance_from_decoded_event(
+                        event, ethereum_tx, block_timestamp
+                    )
                 )
             elif event["event"] in "Withdrawn":
-                WithdrawnEvent().create_from_decoded_event(
-                    event, ethereum_tx, block_timestamp
+                withdrawn_event_instances.append(
+                    WithdrawnEvent.create_instance_from_decoded_event(
+                        event, ethereum_tx, block_timestamp
+                    )
                 )
             else:
                 logger.ERROR(
@@ -67,3 +76,10 @@ class SafeLockingEventsIndexer(EventsContractIndexer):
                     self.__class__.__name__,
                     event["event"],
                 )
+            LockEvent.objects.bulk_create(lock_event_instances, ignore_conflicts=True)
+            UnlockEvent.objects.bulk_create(
+                unlock_event_instances, ignore_conflicts=True
+            )
+            WithdrawnEvent.objects.bulk_create(
+                withdrawn_event_instances, ignore_conflicts=True
+            )

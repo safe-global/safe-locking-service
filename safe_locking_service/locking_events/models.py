@@ -58,10 +58,11 @@ class LockEvent(CommonEvent):
     def __str__(self):
         return "LockEvent: " + super().__str__()
 
-    def create_from_decoded_event(
-        self, decoded_event: EventData, ethereum_tx, block_timestamp
+    @classmethod
+    def create_instance_from_decoded_event(
+        cls, decoded_event: EventData, ethereum_tx, block_timestamp
     ):
-        return LockEvent.objects.create(
+        return cls(
             timestamp=block_timestamp,
             ethereum_tx=ethereum_tx,
             log_index=decoded_event["logIndex"],
@@ -87,10 +88,11 @@ class UnlockEvent(CommonEvent):
     def __str__(self):
         return "UnlockEvent: " + super().__str__()
 
-    def create_from_decoded_event(
-        self, decoded_event: EventData, ethereum_tx, block_timestamp
+    @classmethod
+    def create_instance_from_decoded_event(
+        cls, decoded_event: EventData, ethereum_tx, block_timestamp
     ):
-        return UnlockEvent.objects.create(
+        return cls(
             timestamp=block_timestamp,
             ethereum_tx=ethereum_tx,
             log_index=decoded_event["logIndex"],
@@ -105,7 +107,7 @@ class WithdrawnEvent(CommonEvent):
     Model to store event Withdrawn(address indexed holder, uint32 indexed index, uint96 amount)
     """
 
-    unlock_index = models.ForeignKey(UnlockEvent, on_delete=models.CASCADE)
+    unlock_index = models.PositiveIntegerField()
 
     class Meta:
         constraints = [
@@ -117,19 +119,17 @@ class WithdrawnEvent(CommonEvent):
     def __str__(self):
         return "WithdrawnEvent: " + super().__str__()
 
-    def create_from_decoded_event(
-        self, decoded_event: EventData, ethereum_tx, block_timestamp
+    @classmethod
+    def create_instance_from_decoded_event(
+        cls, decoded_event: EventData, ethereum_tx, block_timestamp
     ):
-        return WithdrawnEvent.objects.create(
+        return cls(
             timestamp=block_timestamp,
             ethereum_tx=ethereum_tx,
             log_index=decoded_event["logIndex"],
             holder=decoded_event["args"]["holder"],
             amount=decoded_event["args"]["amount"],
-            unlock_index=UnlockEvent.objects.get(
-                holder=decoded_event["args"]["holder"],
-                unlock_index=decoded_event["args"]["index"],
-            ),
+            unlock_index=decoded_event["args"]["index"],
         )
 
 
