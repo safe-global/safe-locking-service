@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from django.test import TestCase
 
 from gnosis.eth.tests.ethereum_test_case import EthereumTestCaseMixin
@@ -7,7 +8,8 @@ from ..indexers.safe_locking_events_indexer import (
     SafeLockingEventsIndexer,
     get_safe_locking_event_indexer,
 )
-from ..models import EthereumTx, StatusEventsIndexer
+from ..models import EthereumTx, LockEvent, StatusEventsIndexer, UnlockEvent
+from .utils import erc20_approve, locking_contract_lock, locking_contract_unlock
 
 
 class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
@@ -36,36 +38,62 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
 
     def test_index_lock_events(self):
         account = self.ethereum_test_account
-        # TODO Refactor erc20 approve
-        tx_approval = self.erc20_contract.functions.approve(
-            self.locking_contract.address, 10
-        ).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.ethereum_client.w3.eth.get_transaction_count(
-                    account.address
-                ),
-            }
+        lock_amount = 100
+        erc20_approve(
+            self.ethereum_client.w3,
+            account,
+            self.erc20_contract,
+            self.locking_contract.address,
+            lock_amount,
         )
-        signed_tx = account.sign_transaction(tx_approval)
-        tx_hash = self.ethereum_client.w3.eth.send_raw_transaction(
-            signed_tx.rawTransaction
-        )
-        tx_receipt = self.ethereum_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        # TODO Refactor Safe lock
-        tx_lock = self.locking_contract.functions.lock(10).build_transaction(
-            {
-                "from": account.address,
-                "nonce": self.ethereum_client.w3.eth.get_transaction_count(
-                    account.address
-                ),
-            }
-        )
-        signed_tx = account.sign_transaction(tx_lock)
-        tx_hash = self.ethereum_client.w3.eth.send_raw_transaction(
-            signed_tx.rawTransaction
-        )
-        tx_receipt = self.ethereum_client.w3.eth.wait_for_transaction_receipt(tx_hash)
         locking_events_indexer = SafeLockingEventsIndexer(self.locking_contract_address)
         locking_events_indexer.index_until_last_chain_block()
-        self.assertEqual(EthereumTx.objects.count(), 1)
+        self.assertEqual(EthereumTx.objects.count(), 0)
+        self.assertEqual(LockEvent.objects.count(), 0)
+        for i in range(0, 10):
+            locking_contract_lock(
+                self.ethereum_client.w3, account, self.locking_contract, 10
+            )
+
+        locking_events_indexer.index_until_last_chain_block()
+        self.assertEqual(EthereumTx.objects.count(), 10)
+        self.assertEqual(LockEvent.objects.filter(holder=account.address).count(), 10)
+        self.assertEqual(
+            LockEvent.objects.filter(holder=account.address).aggregate(
+                total=Sum("amount")
+            )["total"],
+            100,
+        )
+
+    def test_index_unlock_events(self):
+        account = self.ethereum_test_account
+        lock_amount = 100
+        erc20_approve(
+            self.ethereum_client.w3,
+            account,
+            self.erc20_contract,
+            self.locking_contract.address,
+            lock_amount,
+        )
+        locking_events_indexer = SafeLockingEventsIndexer(self.locking_contract_address)
+        locking_events_indexer.index_until_last_chain_block()
+        self.assertEqual(EthereumTx.objects.count(), 0)
+        self.assertEqual(UnlockEvent.objects.count(), 0)
+        locking_contract_lock(
+            self.ethereum_client.w3, account, self.locking_contract, 100
+        )
+        for i in range(0, 10):
+            locking_contract_unlock(
+                self.ethereum_client.w3, account, self.locking_contract, 10
+            )
+        locking_events_indexer.index_until_last_chain_block()
+        # 1 Lock and 10 Unlock
+        self.assertEqual(EthereumTx.objects.count(), 11)
+        self.assertEqual(LockEvent.objects.filter(holder=account.address).count(), 1)
+        self.assertEqual(UnlockEvent.objects.filter(holder=account.address).count(), 10)
+        self.assertEqual(
+            UnlockEvent.objects.filter(holder=account.address).aggregate(
+                total=Sum("amount")
+            )["total"],
+            100,
+        )
