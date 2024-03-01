@@ -1,4 +1,5 @@
 import datetime
+from functools import cache
 from logging import getLogger
 from typing import List
 
@@ -21,6 +22,16 @@ from safe_locking_service.locking_events.models import (
 )
 
 logger = getLogger(__name__)
+
+
+@cache
+def get_safe_locking_event_indexer():
+    """
+    Return singleton instance of SafeLockingEventsIndexer
+
+    :return:
+    """
+    return SafeLockingEventsIndexer()
 
 
 class SafeLockingEventsIndexer(EventsContractIndexer):
