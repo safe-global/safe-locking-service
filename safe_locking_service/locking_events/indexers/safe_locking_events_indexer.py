@@ -31,12 +31,12 @@ def get_safe_locking_event_indexer():
 
     :return:
     """
-    return SafeLockingEventsIndexer()
+    return SafeLockingEventsIndexer(settings.SAFE_LOCKING_CONTRACT_ADDRESS)
 
 
 class SafeLockingEventsIndexer(EventsContractIndexer):
-    def __init__(self):
-        self.contract_address = settings.SAFE_LOCKING_CONTRACT_ADDRESS
+    def __init__(self, contract_address):
+        self.contract_address = contract_address
         super().__init__()
 
     @property

@@ -363,9 +363,9 @@ ETH_EVENTS_BLOCK_PROCESS_LIMIT_MAX = env.int(
 )  # Maximum number of blocks to process together when searching for events. 0 == no limit.
 
 ENABLE_AUTO_BLOCK_PROCESS_LIMIT = env.bool(
-    "enable_auto_block_process_limit", default=True
+    "ENABLE_AUTO_BLOCK_PROCESS_LIMIT", default=True
 )  # Enable automatic calculation of block_process_limit
 
 ETH_EVENTS_BLOCKS_BEHIND = env.int(
-    "ETH_EVENTS_BLOCKS_BEHIND", default=10
+    "ETH_EVENTS_BLOCKS_BEHIND", default=0
 )  # Number of blocks behind last block to avoid a reorg.
