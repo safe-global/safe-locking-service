@@ -18,13 +18,13 @@ class BlockEventsManager:
         self.block_process_limit = settings.ETH_EVENTS_BLOCK_PROCESS_LIMIT
         self.block_process_limit_max = settings.ETH_EVENTS_BLOCK_PROCESS_LIMIT_MAX
         self.ethereum_client = EthereumClientProvider()
-        self.blocks_behind = 0  # TODO add configuration
-        self.enable_auto_block_process_limit = True
+        self.blocks_behind = settings.ETH_EVENTS_BLOCKS_BEHIND
+        self.enable_auto_block_process_limit = settings.ENABLE_AUTO_BLOCK_PROCESS_LIMIT
 
     @contextmanager
     def auto_adjust_block_limit(self, from_block_number: int, to_block_number: int):
         """
-        Optimize number of queried every time (block process limit)
+        Optimize number of queried blocks every time (block process limit)
         based on how fast the block interval is retrieved
         """
 

@@ -209,7 +209,7 @@ class EventsContractIndexer(BlockEventsManager):
         from_block = self.get_from_block(self.contract_address)
         logger.info(f"Starting indexer, pending-blocks:{last_current_block-from_block}")
 
-        while from_block < last_current_block:
+        while from_block < last_current_block - self.blocks_behind:
             to_block = self.get_to_block(from_block, last_current_block)
             logger.info(
                 f"Indexing from-block {from_block} to-block {to_block} pending-blocks {last_current_block-to_block}"
@@ -232,5 +232,5 @@ class EventsContractIndexer(BlockEventsManager):
                 self.set_processed_events(unprocessed_events)
             # Update from block
             from_block = to_block
-        # Update last block indexed
-        self.set_last_indexed_block(self.contract_address, from_block)
+            # Update last block indexed
+            self.set_last_indexed_block(self.contract_address, from_block)
