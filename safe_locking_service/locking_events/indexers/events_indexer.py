@@ -56,7 +56,7 @@ class EventsContractIndexer(BlockEventsManager):
             events_to_listen.setdefault(key, []).append(event)
         return events_to_listen
 
-    def _fetch_events_from_node(
+    def _fetch_log_events_from_node(
         self,
         from_block_number: int,
         to_block_number: int,
@@ -78,7 +78,7 @@ class EventsContractIndexer(BlockEventsManager):
         with self.auto_adjust_block_limit(from_block_number, to_block_number):
             return self.ethereum_client.slow_w3.eth.get_logs(parameters)
 
-    def _find_events_using_topics(
+    def _find_log_events_by_topics(
         self,
         from_block_number: int,
         to_block_number: int,
@@ -91,14 +91,21 @@ class EventsContractIndexer(BlockEventsManager):
         :return: LogReceipt for matching events
         """
         try:
-            return self._fetch_events_from_node(from_block_number, to_block_number)
+            return self._fetch_log_events_from_node(from_block_number, to_block_number)
         except IOError as e:
+            logger.error(
+                "%s: Error retrieving events from-block=%d to-block=%d : %s",
+                self.__class__.__name__,
+                from_block_number,
+                to_block_number,
+                e,
+            )
             raise FindRelevantEventsException(
                 f"Request error retrieving events "
                 f"from-block={from_block_number} to-block={to_block_number}"
             ) from e
         except ValueError as e:
-            logger.warning(
+            logger.error(
                 "%s: Value error retrieving events from-block=%d to-block=%d : %s",
                 self.__class__.__name__,
                 from_block_number,
@@ -110,7 +117,7 @@ class EventsContractIndexer(BlockEventsManager):
                 f"from-block={from_block_number} to-block={to_block_number}"
             ) from e
 
-    def find_relevant_events(
+    def find_relevant_log_events(
         self,
         from_block_number: int,
         to_block_number: int,
@@ -129,7 +136,7 @@ class EventsContractIndexer(BlockEventsManager):
             to_block_number,
             self.contract_address,
         )
-        log_receipts = self._find_events_using_topics(
+        log_receipts = self._find_log_events_by_topics(
             from_block_number, to_block_number
         )
 
@@ -160,7 +167,8 @@ class EventsContractIndexer(BlockEventsManager):
                 continue
 
         logger.error(
-            "Unexpected log format for log-receipt %s",
+            "%s: Unexpected log format for log-receipt %s",
+            self.__class__.__name__,
             log_receipt,
         )
         return None
@@ -177,7 +185,15 @@ class EventsContractIndexer(BlockEventsManager):
                 decoded_elements.append(decoded_element)
         return decoded_elements
 
-    def get_unprocessed_events(self, log_receipts: Sequence[LogReceipt]):
+    def get_unprocessed_events(
+        self, log_receipts: Sequence[LogReceipt]
+    ) -> Sequence[LogReceipt]:
+        """
+        Get the log_receipts events that were not stored as processed in the memory cache
+
+        :param log_receipts:
+        :return: unprocessed log_receipts
+        """
         return [
             log_receipt
             for log_receipt in log_receipts
@@ -189,6 +205,12 @@ class EventsContractIndexer(BlockEventsManager):
         ]
 
     def set_processed_events(self, log_receipts: Sequence[LogReceipt]):
+        """
+        Set the log_receipts events as processed in the memory cache
+
+        :param log_receipts:
+        :return:
+        """
         for log_receipt in log_receipts:
             self.element_already_processed_checker.mark_as_processed(
                 log_receipt["transactionHash"],
@@ -197,25 +219,39 @@ class EventsContractIndexer(BlockEventsManager):
             )
 
     @abstractmethod
-    def process_decoded_events(self):
+    def process_decoded_events(self, decoded_events: List[EventData]):
+        """
+        Function to implement custom logic to process the decoded_events
+
+        :param decoded_events:
+        :return:
+        """
         pass
 
     def index_until_last_chain_block(self):
         """
-        Function that index from last indexed block until current last block in the chain.
-        This function also updates the last indexed block in database.
+        Run the indexer from the last indexed block until current last generated block on chain.
+        Updates the last indexed block in database.
         """
         last_current_block = self.get_current_last_block()
         from_block = self.get_from_block(self.contract_address)
-        logger.info(f"Starting indexer, pending-blocks:{last_current_block-from_block}")
+        logger.info(
+            "%s: Starting indexing for pending-blocks=%d",
+            self.__class__.__name__,
+            last_current_block - from_block,
+        )
 
         while from_block < last_current_block - self.blocks_behind:
             to_block = self.get_to_block(from_block, last_current_block)
             logger.info(
-                f"Indexing from-block {from_block} to-block {to_block} pending-blocks {last_current_block-to_block}"
+                "%s: Indexing from-block-number=%d to-block-number=%d pending-blocks=%d",
+                self.__class__.__name__,
+                from_block,
+                to_block,
+                last_current_block - to_block,
             )
             try:
-                log_receipts = self.find_relevant_events(from_block, to_block)
+                log_receipts = self.find_relevant_log_events(from_block, to_block)
             except FindRelevantEventsException:
                 self.reset_block_process_limit()
                 continue
@@ -223,7 +259,10 @@ class EventsContractIndexer(BlockEventsManager):
             if log_receipts:
                 unprocessed_events = self.get_unprocessed_events(log_receipts)
                 logger.info(
-                    f"Processing {len(unprocessed_events)} events from {len(log_receipts)} events"
+                    "%s: Processing %d events from %d events",
+                    self.__class__.__name__,
+                    len(unprocessed_events),
+                    len(log_receipts),
                 )
                 decoded_events: List[EventData] = self.decode_events(unprocessed_events)
                 # Store events in database

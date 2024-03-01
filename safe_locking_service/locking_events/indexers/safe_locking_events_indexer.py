@@ -71,7 +71,7 @@ class SafeLockingEventsIndexer(EventsContractIndexer):
                     )
                 )
             else:
-                logger.ERROR(
+                logger.error(
                     "%s: Unrecognized event type: %s",
                     self.__class__.__name__,
                     event["event"],
