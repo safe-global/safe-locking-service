@@ -197,5 +197,40 @@ class EventsContractIndexer(BlockEventsManager):
             )
 
     @abstractmethod
-    def index_until_last_chain_block(self):
+    def process_decoded_events(self):
         pass
+
+    def index_until_last_chain_block(self):
+        """
+        Function that index from last indexed block until current last block in the chain.
+        This function also updates the last indexed block in database.
+        """
+        last_current_block = self.get_current_last_block()
+        from_block = self.get_from_block(self.contract_address)
+        logger.info(f"Starting indexer, pending-blocks:{last_current_block-from_block}")
+
+        while from_block < last_current_block:
+            to_block = self.get_to_block(from_block, last_current_block)
+            logger.info(
+                f"Indexing from-block {from_block} to-block {to_block} pending-blocks {last_current_block-to_block}"
+            )
+            try:
+                log_receipts = self.find_relevant_events(from_block, to_block)
+            except FindRelevantEventsException:
+                self.reset_block_process_limit()
+                continue
+
+            if log_receipts:
+                unprocessed_events = self.get_unprocessed_events(log_receipts)
+                logger.info(
+                    f"Processing {len(unprocessed_events)} events from {len(log_receipts)} events"
+                )
+                decoded_events: List[EventData] = self.decode_events(unprocessed_events)
+                # Store events in database
+                self.process_decoded_events(decoded_events)
+                # Mark events as processed
+                self.set_processed_events(unprocessed_events)
+            # Update from block
+            from_block = to_block
+        # Update last block indexed
+        self.set_last_indexed_block(self.contract_address, from_block)

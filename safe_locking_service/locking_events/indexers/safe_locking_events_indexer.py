@@ -12,12 +12,12 @@ from safe_locking_service.locking_events.contracts.locking_contract import (
 )
 from safe_locking_service.locking_events.indexers.events_indexer import (
     EventsContractIndexer,
-    FindRelevantEventsException,
 )
 from safe_locking_service.locking_events.models import (
     EthereumTx,
     LockEvent,
     UnlockEvent,
+    WithdrawnEvent,
 )
 
 logger = getLogger(__name__)
@@ -40,75 +40,30 @@ class SafeLockingEventsIndexer(EventsContractIndexer):
             safe_locking_contract.events.Withdrawn(),
         ]
 
-    def index_until_last_chain_block(self):
-        """
-        Function that index from last indexed block until current last block in the chain.
-        This function also updates the last indexed block in database.
-        """
-        last_current_block = self.get_current_last_block()
-        from_block = self.get_from_block(self.contract_address)
-        logger.info(f"Starting indexer, pending-blocks:{last_current_block-from_block}")
-
-        while from_block < last_current_block:
-            to_block = self.get_to_block(from_block, last_current_block)
-            logger.info(
-                f"Indexing from-block {from_block} to-block {to_block} pending-blocks {last_current_block-to_block}"
+    def process_decoded_events(self, decoded_events: List[EventData]):
+        for event in decoded_events:
+            block_timestamp = datetime.datetime.fromtimestamp(
+                self.ethereum_client.get_block(event["blockNumber"])["timestamp"],
+                datetime.timezone.utc,
             )
-            try:
-                log_receipts = self.find_relevant_events(from_block, to_block)
-            except FindRelevantEventsException:
-                self.reset_block_process_limit()
-                continue
-
-            if log_receipts:
-                unprocessed_events = self.get_unprocessed_events(log_receipts)
-                logger.info(
-                    f"Processing {len(unprocessed_events)} events from {len(log_receipts)} events"
+            ethereum_tx, created = EthereumTx().create_from_decoded_event(
+                event, block_timestamp
+            )
+            if event["event"] in "Locked":
+                LockEvent().create_from_decoded_event(
+                    event, ethereum_tx, block_timestamp
                 )
-                decoded_events: List[EventData] = self.decode_events(unprocessed_events)
-                # TODO Refactor inserts
-                locked_events = []
-                unlocked_events = []
-                for event in decoded_events:
-                    timestamp = datetime.datetime.fromtimestamp(
-                        self.ethereum_client.get_block(event["blockNumber"])[
-                            "timestamp"
-                        ],
-                        datetime.timezone.utc,
-                    )
-                    ethereum_tx, created = EthereumTx.objects.get_or_create(
-                        tx_hash=event["transactionHash"],
-                        block_hash=event["blockHash"],
-                        block_number=event["blockNumber"],
-                        block_timestamp=timestamp,
-                    )
-                    if created:
-                        if event["event"] in "Unlocked":
-                            unlocked_events.append(
-                                UnlockEvent(
-                                    timestamp=timestamp,
-                                    ethereum_tx=ethereum_tx,
-                                    log_index=event["logIndex"],
-                                    holder=event["args"]["holder"],
-                                    amount=event["args"]["amount"],
-                                    unlock_index=event["args"]["index"],
-                                )
-                            )
-                        elif event["event"] in "Locked":
-                            locked_events.append(
-                                LockEvent(
-                                    timestamp=timestamp,
-                                    ethereum_tx=ethereum_tx,
-                                    log_index=event["logIndex"],
-                                    holder=event["args"]["holder"],
-                                    amount=event["args"]["amount"],
-                                )
-                            )
-
-                LockEvent.objects.bulk_create(locked_events)
-                UnlockEvent.objects.bulk_create(unlocked_events)
-                self.set_processed_events(unprocessed_events)
-            # Update from block
-            from_block = to_block
-        # Update last block indexed
-        self.set_last_indexed_block(self.contract_address, from_block)
+            elif event["event"] in "Unlocked":
+                UnlockEvent().create_from_decoded_event(
+                    event, ethereum_tx, block_timestamp
+                )
+            elif event["event"] in "Withdrawn":
+                WithdrawnEvent().create_from_decoded_event(
+                    event, ethereum_tx, block_timestamp
+                )
+            else:
+                logger.ERROR(
+                    "%s: Unrecognized event type: %s",
+                    self.__class__.__name__,
+                    event["event"],
+                )

@@ -1,5 +1,7 @@
 from django.db import models
 
+from web3.types import EventData
+
 from gnosis.eth.django.models import EthereumAddressV2Field, Keccak256Field, Uint96Field
 
 
@@ -11,6 +13,14 @@ class EthereumTx(models.Model):
 
     def __str__(self):
         return f"Transaction hash {self.tx_hash}"
+
+    def create_from_decoded_event(self, decoded_event: EventData, block_timestamp):
+        return EthereumTx.objects.get_or_create(
+            tx_hash=decoded_event["transactionHash"],
+            block_hash=decoded_event["blockHash"],
+            block_number=decoded_event["blockNumber"],
+            block_timestamp=block_timestamp,
+        )
 
 
 class CommonEvent(models.Model):
@@ -48,6 +58,17 @@ class LockEvent(CommonEvent):
     def __str__(self):
         return "LockEvent: " + super().__str__()
 
+    def create_from_decoded_event(
+        self, decoded_event: EventData, ethereum_tx, block_timestamp
+    ):
+        return LockEvent.objects.create(
+            timestamp=block_timestamp,
+            ethereum_tx=ethereum_tx,
+            log_index=decoded_event["logIndex"],
+            holder=decoded_event["args"]["holder"],
+            amount=decoded_event["args"]["amount"],
+        )
+
 
 class UnlockEvent(CommonEvent):
     """
@@ -66,6 +87,18 @@ class UnlockEvent(CommonEvent):
     def __str__(self):
         return "UnlockEvent: " + super().__str__()
 
+    def create_from_decoded_event(
+        self, decoded_event: EventData, ethereum_tx, block_timestamp
+    ):
+        return UnlockEvent.objects.create(
+            timestamp=block_timestamp,
+            ethereum_tx=ethereum_tx,
+            log_index=decoded_event["logIndex"],
+            holder=decoded_event["args"]["holder"],
+            amount=decoded_event["args"]["amount"],
+            unlock_index=decoded_event["args"]["index"],
+        )
+
 
 class WithdrawnEvent(CommonEvent):
     """
@@ -83,6 +116,21 @@ class WithdrawnEvent(CommonEvent):
 
     def __str__(self):
         return "WithdrawnEvent: " + super().__str__()
+
+    def create_from_decoded_event(
+        self, decoded_event: EventData, ethereum_tx, block_timestamp
+    ):
+        return WithdrawnEvent.objects.create(
+            timestamp=block_timestamp,
+            ethereum_tx=ethereum_tx,
+            log_index=decoded_event["logIndex"],
+            holder=decoded_event["args"]["holder"],
+            amount=decoded_event["args"]["amount"],
+            unlock_index=UnlockEvent.objects.get(
+                holder=decoded_event["args"]["holder"],
+                unlock_index=decoded_event["args"]["index"],
+            ),
+        )
 
 
 class StatusEventsIndexer(models.Model):
