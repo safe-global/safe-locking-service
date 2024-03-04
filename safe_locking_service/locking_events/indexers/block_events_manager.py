@@ -91,9 +91,16 @@ class BlockEventsManager:
         )
 
     def get_from_block(self, address: ChecksumAddress):
-        last_indexed_block = StatusEventsIndexer.objects.get(
-            contract=address
-        ).last_indexed_block
+        try:
+            last_indexed_block = StatusEventsIndexer.objects.get(
+                contract=address
+            ).last_indexed_block
+        except StatusEventsIndexer.DoesNotExist:
+            StatusEventsIndexer.objects.create(
+                contract=address, deployed_block=0, last_indexed_block=0
+            )
+            return 0
+
         return (
             last_indexed_block
             if last_indexed_block
