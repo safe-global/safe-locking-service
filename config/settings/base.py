@@ -239,13 +239,15 @@ CELERY_TASK_QUEUE_MAX_PRIORITY = 10
 CELERY_BROKER_TRANSPORT_OPTIONS = {}
 
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_routes
-# CELERY_ROUTES = (
-#    [
-#        (
-#            "safe_locking_service.locking_events.tasks.*",
-#            {"queue": "events", "delivery_mode": "transient"},
-#        ),
-#    ])
+CELERY_ROUTES = (
+    [
+        (
+            "safe_locking_service.locking_events.tasks.index_locking_events_task",
+            {"queue": "events"},
+        ),
+    ],
+)
+
 
 # Django REST Framework
 # ------------------------------------------------------------------------------
@@ -338,6 +340,16 @@ LOGGING = {
             "level": "ERROR",
             "handlers": ["console", "mail_admins"],
             "propagate": True,
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,  # If not it will be out for the root logger too
+        },
+        "celery.worker.strategy": {  # All the "Received task..."
+            "handlers": ["console"],
+            "level": "INFO" if DEBUG else "WARNING",
+            "propagate": False,  # If not it will be out for the root logger too
         },
     },
 }

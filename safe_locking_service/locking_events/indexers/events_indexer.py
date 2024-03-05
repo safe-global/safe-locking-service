@@ -254,7 +254,7 @@ class EventsContractIndexer(BlockEventsManager):
                 log_receipts = self.find_relevant_log_events(from_block, to_block)
             except FindRelevantEventsException:
                 self.reset_block_process_limit()
-                continue
+                break
 
             if log_receipts:
                 unprocessed_events = self.get_unprocessed_events(log_receipts)
@@ -273,3 +273,9 @@ class EventsContractIndexer(BlockEventsManager):
             from_block = to_block
             # Update last block indexed
             self.set_last_indexed_block(self.contract_address, from_block)
+
+        logger.info(
+            "%s: Finalizing indexing cycle with pending-blocks=%d",
+            self.__class__.__name__,
+            last_current_block - from_block,
+        )
