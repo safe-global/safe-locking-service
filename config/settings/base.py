@@ -293,6 +293,10 @@ LOGGING = {
         "verbose": {
             "format": "%(asctime)s [%(levelname)s] [%(processName)s] %(message)s"
         },
+        "celery_verbose": {
+            "class": "safe_locking_service.utils.celery.PatchedCeleryFormatter",
+            "format": "%(asctime)s [%(levelname)s] [%(task_id)s/%(task_name)s] %(message)s",
+        },
     },
     "handlers": {
         "mail_admins": {
@@ -308,6 +312,12 @@ LOGGING = {
         "console_short": {
             "class": "logging.StreamHandler",
             "formatter": "short",
+        },
+        "celery_console": {
+            "level": "DEBUG",
+            "filters": [] if DEBUG else ["ignore_succeeded_none"],
+            "class": "logging.StreamHandler",
+            "formatter": "celery_verbose",
         },
     },
     "loggers": {
@@ -331,16 +341,6 @@ LOGGING = {
             "handlers": ["console"],
             "propagate": False,
         },
-        "django.request": {
-            "handlers": ["mail_admins"],
-            "level": "ERROR",
-            "propagate": True,
-        },
-        "django.security.DisallowedHost": {
-            "level": "ERROR",
-            "handlers": ["console", "mail_admins"],
-            "propagate": True,
-        },
         "celery": {
             "handlers": ["console"],
             "level": "DEBUG" if DEBUG else "INFO",
@@ -350,6 +350,16 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO" if DEBUG else "WARNING",
             "propagate": False,  # If not it will be out for the root logger too
+        },
+        "django.request": {
+            "handlers": ["mail_admins"],
+            "level": "ERROR",
+            "propagate": True,
+        },
+        "django.security.DisallowedHost": {
+            "level": "ERROR",
+            "handlers": ["console", "mail_admins"],
+            "propagate": True,
         },
     },
 }
