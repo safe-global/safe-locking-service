@@ -14,7 +14,8 @@ class EthereumTx(models.Model):
     def __str__(self):
         return f"Transaction hash {self.tx_hash}"
 
-    def create_from_decoded_event(self, decoded_event: EventData, block_timestamp):
+    @staticmethod
+    def create_from_decoded_event(decoded_event: EventData, block_timestamp):
         return EthereumTx.objects.get_or_create(
             tx_hash=decoded_event["transactionHash"],
             block_hash=decoded_event["blockHash"],
