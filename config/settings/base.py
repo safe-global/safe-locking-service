@@ -375,19 +375,22 @@ REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 # Ethereum
 ETHEREUM_NODE_URL = env("ETHEREUM_NODE_URL", default=None)
 
-# Event indexing
-SAFE_LOCKING_CONTRACT_ADDRESS = env("SAFE_LOCKING_CONTRACT_ADDRESS", default=None)
-ETH_EVENTS_BLOCK_PROCESS_LIMIT = env.int(
-    "ETH_EVENTS_BLOCK_PROCESS_LIMIT", default=50
+# Event indexer configuration
+SAFE_LOCKING_CONTRACT_ADDRESS = env.str(
+    "SAFE_LOCKING_CONTRACT_ADDRESS",
+    default="0xECB34B0EbcF4B85A7c113d4fA73cd2A450B40445",
+)  # Sepolia address
+INDEXER_BLOCK_PROCESS_LIMIT = env.int(
+    "INDEXER_BLOCK_PROCESS_LIMIT", default=50
 )  # Initial number of blocks to process together when searching for events. It will be auto increased. 0 == no limit.
-ETH_EVENTS_BLOCK_PROCESS_LIMIT_MAX = env.int(
-    "ETH_EVENTS_BLOCK_PROCESS_LIMIT_MAX", default=0
+INDEXER_BLOCK_PROCESS_LIMIT_MAX = env.int(
+    "INDEXER_BLOCK_PROCESS_LIMIT_MAX", default=0
 )  # Maximum number of blocks to process together when searching for events. 0 == no limit.
 
-ENABLE_AUTO_BLOCK_PROCESS_LIMIT = env.bool(
-    "ENABLE_AUTO_BLOCK_PROCESS_LIMIT", default=True
+INDEXER_ENABLE_AUTO_BLOCK_PROCESS_LIMIT = env.bool(
+    "INDEXER_ENABLE_AUTO_BLOCK_PROCESS_LIMIT", default=True
 )  # Enable automatic calculation of block_process_limit
 
-ETH_EVENTS_BLOCKS_BEHIND = env.int(
-    "ETH_EVENTS_BLOCKS_BEHIND", default=0
+INDEXER_BLOCKS_BEHIND = env.int(
+    "INDEXER_BLOCKS_BEHIND", default=0
 )  # Number of blocks behind last block to avoid a reorg.

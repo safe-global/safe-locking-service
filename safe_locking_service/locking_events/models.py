@@ -76,7 +76,7 @@ class UnlockEvent(CommonEvent):
     Model to store event Unlocked(address indexed holder, uint32 indexed index, uint96 amount)
     """
 
-    unlock_index = models.PositiveIntegerField()
+    unlock_index = models.BigIntegerField()
 
     class Meta:
         constraints = [
@@ -107,7 +107,7 @@ class WithdrawnEvent(CommonEvent):
     Model to store event Withdrawn(address indexed holder, uint32 indexed index, uint96 amount)
     """
 
-    unlock_index = models.PositiveIntegerField()
+    unlock_index = models.BigIntegerField()
 
     class Meta:
         constraints = [

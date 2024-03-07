@@ -6,20 +6,27 @@ from django.conf import settings
 
 from eth_typing import ChecksumAddress
 
-from gnosis.eth.ethereum_client import EthereumClientProvider
+from gnosis.eth.ethereum_client import EthereumClient
 
 from safe_locking_service.locking_events.models import StatusEventsIndexer
 
 logger = getLogger(__name__)
 
 
-class BlockEventsManager:
-    def __init__(self, *args, **kwargs):
-        self.block_process_limit = settings.ETH_EVENTS_BLOCK_PROCESS_LIMIT
-        self.block_process_limit_max = settings.ETH_EVENTS_BLOCK_PROCESS_LIMIT_MAX
-        self.ethereum_client = EthereumClientProvider()
-        self.blocks_behind = settings.ETH_EVENTS_BLOCKS_BEHIND
-        self.enable_auto_block_process_limit = settings.ENABLE_AUTO_BLOCK_PROCESS_LIMIT
+class BaseIndexer:
+    def __init__(
+        self,
+        ethereum_client: EthereumClient,
+        block_process_limit: int = settings.INDEXER_BLOCK_PROCESS_LIMIT,
+        block_process_limit_max: int = settings.INDEXER_BLOCK_PROCESS_LIMIT_MAX,
+        enable_auto_block_process_limit: bool = settings.INDEXER_ENABLE_AUTO_BLOCK_PROCESS_LIMIT,
+        blocks_behind: int = settings.INDEXER_BLOCKS_BEHIND,
+    ):
+        self.block_process_limit = block_process_limit
+        self.block_process_limit_max = block_process_limit_max
+        self.enable_auto_block_process_limit = enable_auto_block_process_limit
+        self.blocks_behind = blocks_behind
+        self.ethereum_client = ethereum_client
 
     @contextmanager
     def auto_adjust_block_limit(self, from_block_number: int, to_block_number: int):

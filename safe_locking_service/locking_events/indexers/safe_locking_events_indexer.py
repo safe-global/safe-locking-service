@@ -1,12 +1,15 @@
 import datetime
-from functools import cache
+from functools import cache, cached_property
 from logging import getLogger
 from typing import List
 
 from django.conf import settings
 
+from eth_typing import ChecksumAddress
 from web3.contract.contract import ContractEvent
 from web3.types import EventData
+
+from gnosis.eth.ethereum_client import EthereumClientProvider
 
 from safe_locking_service.locking_events.contracts.locking_contract import (
     get_locking_contract,
@@ -35,11 +38,12 @@ def get_safe_locking_event_indexer():
 
 
 class SafeLockingEventsIndexer(EventsContractIndexer):
-    def __init__(self, contract_address):
+    def __init__(self, contract_address: ChecksumAddress):
         self.contract_address = contract_address
-        super().__init__()
 
-    @property
+        super().__init__(ethereum_client=EthereumClientProvider())
+
+    @cached_property
     def contract_events(self) -> List[ContractEvent]:
         """
         :return: List of Web3.py `ContractEvent` to listen to
@@ -63,19 +67,19 @@ class SafeLockingEventsIndexer(EventsContractIndexer):
             lock_event_instances = []
             unlock_event_instances = []
             withdrawn_event_instances = []
-            if event["event"] in "Locked":
+            if event["event"] == "Locked":
                 lock_event_instances.append(
                     LockEvent.create_instance_from_decoded_event(
                         event, ethereum_tx, block_timestamp
                     )
                 )
-            elif event["event"] in "Unlocked":
+            elif event["event"] == "Unlocked":
                 unlock_event_instances.append(
                     UnlockEvent.create_instance_from_decoded_event(
                         event, ethereum_tx, block_timestamp
                     )
                 )
-            elif event["event"] in "Withdrawn":
+            elif event["event"] == "Withdrawn":
                 withdrawn_event_instances.append(
                     WithdrawnEvent.create_instance_from_decoded_event(
                         event, ethereum_tx, block_timestamp

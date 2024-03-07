@@ -11,7 +11,7 @@ from web3.contract.contract import ContractEvent
 from web3.exceptions import LogTopicError
 from web3.types import EventData, FilterParams, LogReceipt
 
-from .block_events_manager import BlockEventsManager
+from .base_indexer import BaseIndexer
 from .element_already_processed_checker import ElementAlreadyProcessedChecker
 
 logger = getLogger(__name__)
@@ -21,7 +21,7 @@ class FindRelevantEventsException(Exception):
     pass
 
 
-class EventsContractIndexer(BlockEventsManager):
+class EventsContractIndexer(BaseIndexer):
     """
     Index contract events
     """
@@ -31,10 +31,9 @@ class EventsContractIndexer(BlockEventsManager):
     def __init__(self, *args, **kwargs):
         # Number of concurrent requests to `getLogs`
         self.element_already_processed_checker = ElementAlreadyProcessedChecker()
-
         super().__init__(*args, **kwargs)
 
-    @property
+    @cached_property
     @abstractmethod
     def contract_events(self) -> List[ContractEvent]:
         """
