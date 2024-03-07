@@ -233,7 +233,7 @@ class EventsContractIndexer(BaseIndexer):
         Updates the last indexed block in database.
         """
         last_current_block = self.get_current_last_block()
-        from_block = self.get_from_block(self.contract_address)
+        from_block = self.get_from_block_number(self.contract_address)
         logger.info(
             "%s: Starting indexing for pending-blocks=%d",
             self.__class__.__name__,
@@ -241,7 +241,7 @@ class EventsContractIndexer(BaseIndexer):
         )
 
         while from_block < last_current_block - self.blocks_behind:
-            to_block = self.get_to_block(from_block, last_current_block)
+            to_block = self.get_to_block_number(from_block, last_current_block)
             logger.info(
                 "%s: Indexing from-block-number=%d to-block-number=%d pending-blocks=%d",
                 self.__class__.__name__,

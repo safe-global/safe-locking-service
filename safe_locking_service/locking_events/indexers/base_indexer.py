@@ -88,16 +88,34 @@ class BaseIndexer:
                 )
                 self.block_process_limit = self.block_process_limit_max
 
-    def get_current_last_block(self):
+    def get_current_last_block(self) -> int:
+        """
+        Get the last block number on chain
+
+        :return:
+        """
         return self.ethereum_client.current_block_number
 
-    def get_to_block(self, from_block_number: int, last_block: int):
+    def get_to_block_number(self, from_block_number: int, last_block: int) -> int:
+        """
+        Get until which block query the RPC ethereum node
+
+        :param from_block_number:
+        :param last_block:
+        :return:
+        """
         return min(
             from_block_number + self.block_process_limit - 1,
             last_block - self.blocks_behind,
         )
 
-    def get_from_block(self, address: ChecksumAddress):
+    def get_from_block_number(self, address: ChecksumAddress) -> int:
+        """
+        Get from which block the indexer must start
+
+        :param address:
+        :return:
+        """
         try:
             last_indexed_block = StatusEventsIndexer.objects.get(
                 contract=address
@@ -115,9 +133,21 @@ class BaseIndexer:
         )
 
     def set_last_indexed_block(self, address: ChecksumAddress, block_number: int):
+        """
+        Store in database the value of the last indexed block
+
+        :param address:
+        :param block_number:
+        :return:
+        """
         StatusEventsIndexer.objects.filter(contract=address).update(
             last_indexed_block=block_number
         )
 
     def reset_block_process_limit(self):
-        self.block_process_limit = settings.ETH_EVENTS_BLOCK_PROCESS_LIMIT
+        """
+        Set block_process_limit to 1, useful to fix RPC provider limits
+
+        :return:
+        """
+        self.block_process_limit = 1
