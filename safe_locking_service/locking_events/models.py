@@ -2,13 +2,18 @@ from django.db import models
 
 from web3.types import EventData
 
-from gnosis.eth.django.models import EthereumAddressV2Field, Keccak256Field, Uint96Field
+from gnosis.eth.django.models import (
+    EthereumAddressV2Field,
+    Keccak256Field,
+    Uint32Field,
+    Uint96Field,
+)
 
 
 class EthereumTx(models.Model):
     tx_hash = Keccak256Field(primary_key=True)
     block_hash = Keccak256Field()
-    block_number = models.PositiveIntegerField()
+    block_number = Uint32Field()
     block_timestamp = models.DateTimeField()
 
     def __str__(self):
@@ -33,7 +38,7 @@ class CommonEvent(models.Model):
     id = models.AutoField(primary_key=True)
     timestamp = models.DateTimeField()
     ethereum_tx = models.ForeignKey(EthereumTx, on_delete=models.CASCADE)
-    log_index = models.PositiveIntegerField()
+    log_index = Uint32Field()
     holder = EthereumAddressV2Field()
     amount = Uint96Field()
 
@@ -77,7 +82,7 @@ class UnlockEvent(CommonEvent):
     Model to store event Unlocked(address indexed holder, uint32 indexed index, uint96 amount)
     """
 
-    unlock_index = models.BigIntegerField()
+    unlock_index = Uint32Field()
 
     class Meta:
         constraints = [
@@ -108,7 +113,7 @@ class WithdrawnEvent(CommonEvent):
     Model to store event Withdrawn(address indexed holder, uint32 indexed index, uint96 amount)
     """
 
-    unlock_index = models.BigIntegerField()
+    unlock_index = Uint32Field()
 
     class Meta:
         constraints = [

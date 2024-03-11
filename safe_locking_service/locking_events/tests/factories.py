@@ -55,4 +55,4 @@ class WithdrawnEventFactory(DjangoModelFactory):
     log_index = Sequence(lambda n: n)
     holder = LazyFunction(lambda: Account.create().address)
     amount = fuzzy.FuzzyInteger(0, 1000)
-    unlock_index = SubFactory(UnlockEventFactory)
+    unlock_index = Sequence(lambda n: n + 1)

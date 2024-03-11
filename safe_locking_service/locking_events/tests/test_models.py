@@ -47,7 +47,7 @@ class TestLockingModel(TestCase):
             holder=safe_address, amount=1000
         ).ethereum_tx
         # Expected at least two transactions, one for unlock and other for withdrawn
-        self.assertEqual(EthereumTx.objects.count(), 2)
+        self.assertEqual(EthereumTx.objects.count(), 1)
         withdrawn_event = WithdrawnEvent.objects.filter(
             holder=safe_address, ethereum_tx=ethereum_tx
         )[0]
