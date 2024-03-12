@@ -11,7 +11,6 @@ from safe_locking_service.locking_events.models import (
 )
 
 
-# TODO move to models
 class EventType(Enum):
     LOCKED = 0
     UNLOCKED = 1
@@ -27,7 +26,6 @@ class LockingService:
         :param holder:
         :return:
         """
-
         # Add field unlock_index to Null to be able to apply SQL union
         # Add event_type to correctly serialize later
         lock_events = (
@@ -37,18 +35,14 @@ class LockingService:
                 event_type=Value(EventType.LOCKED.value, output_field=IntegerField())
             )
         )
-
         unlock_events = UnlockEvent.objects.filter(holder=holder).annotate(
             event_type=Value(EventType.UNLOCKED.value, output_field=IntegerField())
         )
-
         withdrawn_events = WithdrawnEvent.objects.filter(holder=holder).annotate(
             event_type=Value(EventType.WITHDRAWN.value, output_field=IntegerField())
         )
-
-        queryset = (
+        return (
             lock_events.union(unlock_events, all=True)
             .union(withdrawn_events, all=True)
             .order_by("-timestamp")
         )
-        return queryset
