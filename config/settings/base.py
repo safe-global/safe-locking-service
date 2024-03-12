@@ -378,7 +378,7 @@ ETHEREUM_NODE_URL = env("ETHEREUM_NODE_URL", default=None)
 # Event indexer configuration
 SAFE_LOCKING_CONTRACT_ADDRESS = env.str(
     "SAFE_LOCKING_CONTRACT_ADDRESS",
-    default="0xECB34B0EbcF4B85A7c113d4fA73cd2A450B40445",
+    default="0x6603fBB35fAfae1674f5A38697a21baCED8bfaD2",
 )  # Sepolia address
 INDEXER_BLOCK_PROCESS_LIMIT = env.int(
     "INDEXER_BLOCK_PROCESS_LIMIT", default=50
