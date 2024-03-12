@@ -1,16 +1,32 @@
 from django.db import models
 
-from gnosis.eth.django.models import EthereumAddressV2Field, Keccak256Field, Uint96Field
+from web3.types import EventData
+
+from gnosis.eth.django.models import (
+    EthereumAddressV2Field,
+    Keccak256Field,
+    Uint32Field,
+    Uint96Field,
+)
 
 
 class EthereumTx(models.Model):
     tx_hash = Keccak256Field(primary_key=True)
     block_hash = Keccak256Field()
-    block_number = models.PositiveIntegerField()
+    block_number = Uint32Field()
     block_timestamp = models.DateTimeField()
 
     def __str__(self):
         return f"Transaction hash {self.tx_hash}"
+
+    @staticmethod
+    def create_from_decoded_event(decoded_event: EventData, block_timestamp):
+        return EthereumTx.objects.get_or_create(
+            tx_hash=decoded_event["transactionHash"],
+            block_hash=decoded_event["blockHash"],
+            block_number=decoded_event["blockNumber"],
+            block_timestamp=block_timestamp,
+        )
 
 
 class CommonEvent(models.Model):
@@ -22,7 +38,7 @@ class CommonEvent(models.Model):
     id = models.AutoField(primary_key=True)
     timestamp = models.DateTimeField()
     ethereum_tx = models.ForeignKey(EthereumTx, on_delete=models.CASCADE)
-    log_index = models.PositiveIntegerField()
+    log_index = Uint32Field()
     holder = EthereumAddressV2Field()
     amount = Uint96Field()
 
@@ -48,13 +64,25 @@ class LockEvent(CommonEvent):
     def __str__(self):
         return "LockEvent: " + super().__str__()
 
+    @classmethod
+    def create_instance_from_decoded_event(
+        cls, decoded_event: EventData, ethereum_tx, block_timestamp
+    ):
+        return cls(
+            timestamp=block_timestamp,
+            ethereum_tx=ethereum_tx,
+            log_index=decoded_event["logIndex"],
+            holder=decoded_event["args"]["holder"],
+            amount=decoded_event["args"]["amount"],
+        )
+
 
 class UnlockEvent(CommonEvent):
     """
     Model to store event Unlocked(address indexed holder, uint32 indexed index, uint96 amount)
     """
 
-    unlock_index = models.PositiveIntegerField()
+    unlock_index = Uint32Field()
 
     class Meta:
         constraints = [
@@ -66,13 +94,26 @@ class UnlockEvent(CommonEvent):
     def __str__(self):
         return "UnlockEvent: " + super().__str__()
 
+    @classmethod
+    def create_instance_from_decoded_event(
+        cls, decoded_event: EventData, ethereum_tx, block_timestamp
+    ):
+        return cls(
+            timestamp=block_timestamp,
+            ethereum_tx=ethereum_tx,
+            log_index=decoded_event["logIndex"],
+            holder=decoded_event["args"]["holder"],
+            amount=decoded_event["args"]["amount"],
+            unlock_index=decoded_event["args"]["index"],
+        )
+
 
 class WithdrawnEvent(CommonEvent):
     """
     Model to store event Withdrawn(address indexed holder, uint32 indexed index, uint96 amount)
     """
 
-    unlock_index = models.ForeignKey(UnlockEvent, on_delete=models.CASCADE)
+    unlock_index = Uint32Field()
 
     class Meta:
         constraints = [
@@ -83,3 +124,25 @@ class WithdrawnEvent(CommonEvent):
 
     def __str__(self):
         return "WithdrawnEvent: " + super().__str__()
+
+    @classmethod
+    def create_instance_from_decoded_event(
+        cls, decoded_event: EventData, ethereum_tx, block_timestamp
+    ):
+        return cls(
+            timestamp=block_timestamp,
+            ethereum_tx=ethereum_tx,
+            log_index=decoded_event["logIndex"],
+            holder=decoded_event["args"]["holder"],
+            amount=decoded_event["args"]["amount"],
+            unlock_index=decoded_event["args"]["index"],
+        )
+
+
+class StatusEventsIndexer(models.Model):
+    contract = EthereumAddressV2Field(primary_key=True, unique=True)
+    deployed_block = models.PositiveIntegerField()
+    last_indexed_block = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"EventIndexer: address={self.contract} deployed_block={self.deployed_block} last_indexed_block={self.last_indexed_block} "

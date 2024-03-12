@@ -239,13 +239,15 @@ CELERY_TASK_QUEUE_MAX_PRIORITY = 10
 CELERY_BROKER_TRANSPORT_OPTIONS = {}
 
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_routes
-# CELERY_ROUTES = (
-#    [
-#        (
-#            "safe_locking_service.locking_events.tasks.*",
-#            {"queue": "events", "delivery_mode": "transient"},
-#        ),
-#    ])
+CELERY_ROUTES = (
+    [
+        (
+            "safe_locking_service.locking_events.tasks.index_locking_events_task",
+            {"queue": "events"},
+        ),
+    ],
+)
+
 
 # Django REST Framework
 # ------------------------------------------------------------------------------
@@ -291,6 +293,10 @@ LOGGING = {
         "verbose": {
             "format": "%(asctime)s [%(levelname)s] [%(processName)s] %(message)s"
         },
+        "celery_verbose": {
+            "class": "safe_locking_service.utils.celery.PatchedCeleryFormatter",
+            "format": "%(asctime)s [%(levelname)s] [%(task_id)s/%(task_name)s] %(message)s",
+        },
     },
     "handlers": {
         "mail_admins": {
@@ -306,6 +312,12 @@ LOGGING = {
         "console_short": {
             "class": "logging.StreamHandler",
             "formatter": "short",
+        },
+        "celery_console": {
+            "level": "DEBUG",
+            "filters": [] if DEBUG else ["ignore_succeeded_none"],
+            "class": "logging.StreamHandler",
+            "formatter": "celery_verbose",
         },
     },
     "loggers": {
@@ -328,6 +340,16 @@ LOGGING = {
             "level": "DEBUG" if DEBUG else "INFO",
             "handlers": ["console"],
             "propagate": False,
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,  # If not it will be out for the root logger too
+        },
+        "celery.worker.strategy": {  # All the "Received task..."
+            "handlers": ["console"],
+            "level": "INFO" if DEBUG else "WARNING",
+            "propagate": False,  # If not it will be out for the root logger too
         },
         "django.request": {
             "handlers": ["mail_admins"],
@@ -352,3 +374,23 @@ REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 
 # Ethereum
 ETHEREUM_NODE_URL = env("ETHEREUM_NODE_URL", default=None)
+
+# Event indexer configuration
+SAFE_LOCKING_CONTRACT_ADDRESS = env.str(
+    "SAFE_LOCKING_CONTRACT_ADDRESS",
+    default="0x6603fBB35fAfae1674f5A38697a21baCED8bfaD2",
+)  # Sepolia address
+INDEXER_BLOCK_PROCESS_LIMIT = env.int(
+    "INDEXER_BLOCK_PROCESS_LIMIT", default=50
+)  # Initial number of blocks to process together when searching for events. It will be auto increased. 0 == no limit.
+INDEXER_BLOCK_PROCESS_LIMIT_MAX = env.int(
+    "INDEXER_BLOCK_PROCESS_LIMIT_MAX", default=0
+)  # Maximum number of blocks to process together when searching for events. 0 == no limit.
+
+INDEXER_ENABLE_AUTO_BLOCK_PROCESS_LIMIT = env.bool(
+    "INDEXER_ENABLE_AUTO_BLOCK_PROCESS_LIMIT", default=True
+)  # Enable automatic calculation of block_process_limit
+
+INDEXER_BLOCKS_BEHIND = env.int(
+    "INDEXER_BLOCKS_BEHIND", default=0
+)  # Number of blocks behind last block to avoid a reorg.

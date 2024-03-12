@@ -16,6 +16,10 @@ fi
 if [ ${RUN_MIGRATIONS:-0} = 1 ]; then
   echo "==> $(date +%H:%M:%S) ==> Migrating Django models... "
   python manage.py migrate --noinput
+
+  echo "==> $(date +%H:%M:%S) ==> Setting up service... "
+  python manage.py setup_service
+
 fi
 
 echo "==> $(date +%H:%M:%S) ==> Running Celery worker with a max_memory_per_child of ${MAX_MEMORY_PER_CHILD} <=="
