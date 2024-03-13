@@ -394,3 +394,7 @@ INDEXER_ENABLE_AUTO_BLOCK_PROCESS_LIMIT = env.bool(
 INDEXER_BLOCKS_BEHIND = env.int(
     "INDEXER_BLOCKS_BEHIND", default=0
 )  # Number of blocks behind last block to avoid a reorg.
+
+# Shell Plus
+# ------------------------------------------------------------------------------
+SHELL_PLUS_PRINT_SQL_TRUNCATE = env.int("SHELL_PLUS_PRINT_SQL_TRUNCATE", default=10_000)

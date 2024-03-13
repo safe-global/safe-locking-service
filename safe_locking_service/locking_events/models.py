@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Index
 
 from web3.types import EventData
 
@@ -42,8 +43,20 @@ class CommonEvent(models.Model):
     holder = EthereumAddressV2Field()
     amount = Uint96Field()
 
+    def get_serialized_timestamp(self) -> str:
+        """
+
+        :return: serialized timestamp
+        """
+        return self.timestamp.isoformat().replace("+00:00", "Z")
+
     class Meta:
         abstract = True
+        indexes = [
+            Index(
+                fields=["holder", "-timestamp"],
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["ethereum_tx", "log_index"], name="unique_ethereum_tx_log_index"
