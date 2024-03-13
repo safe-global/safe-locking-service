@@ -30,17 +30,29 @@ class LockingService:
         # Add event_type to correctly serialize later
         lock_events = (
             LockEvent.objects.filter(holder=holder)
-            .annotate(unlock_index=Value(None, output_field=IntegerField()))
             .annotate(
-                event_type=Value(EventType.LOCKED.value, output_field=IntegerField())
+                unlock_index=Value(None, output_field=IntegerField()),
+                event_type=Value(EventType.LOCKED.value, output_field=IntegerField()),
             )
+            .order_by("-timestamp")
         )
-        unlock_events = UnlockEvent.objects.filter(holder=holder).annotate(
-            event_type=Value(EventType.UNLOCKED.value, output_field=IntegerField())
+
+        unlock_events = (
+            UnlockEvent.objects.filter(holder=holder)
+            .annotate(
+                event_type=Value(EventType.UNLOCKED.value, output_field=IntegerField())
+            )
+            .order_by("-timestamp")
         )
-        withdrawn_events = WithdrawnEvent.objects.filter(holder=holder).annotate(
-            event_type=Value(EventType.WITHDRAWN.value, output_field=IntegerField())
+
+        withdrawn_events = (
+            WithdrawnEvent.objects.filter(holder=holder)
+            .annotate(
+                event_type=Value(EventType.WITHDRAWN.value, output_field=IntegerField())
+            )
+            .order_by("-timestamp")
         )
+
         return (
             lock_events.union(unlock_events, all=True)
             .union(withdrawn_events, all=True)

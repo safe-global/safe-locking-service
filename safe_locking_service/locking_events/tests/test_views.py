@@ -60,9 +60,7 @@ class TestQueueService(TestCase):
             withdrawn_response_result,
             {
                 "eventType": "WITHDRAWN",
-                "executionDate": withdrawn_expected.timestamp.isoformat().replace(
-                    "+00:00", "Z"
-                ),
+                "executionDate": withdrawn_expected.get_serialized_timestamp(),
                 "transactionHash": withdrawn_expected.ethereum_tx_id,
                 "holder": withdrawn_expected.holder,
                 "amount": withdrawn_expected.amount,
@@ -77,9 +75,7 @@ class TestQueueService(TestCase):
             unlock_response_result,
             {
                 "eventType": "WITHDRAWN",
-                "executionDate": unlock_expected.timestamp.isoformat().replace(
-                    "+00:00", "Z"
-                ),
+                "executionDate": unlock_expected.get_serialized_timestamp(),
                 "transactionHash": unlock_expected.ethereum_tx_id,
                 "holder": unlock_expected.holder,
                 "amount": unlock_expected.amount,
@@ -94,9 +90,7 @@ class TestQueueService(TestCase):
             lock_response_result,
             {
                 "eventType": "WITHDRAWN",
-                "executionDate": lock_expected.timestamp.isoformat().replace(
-                    "+00:00", "Z"
-                ),
+                "executionDate": lock_expected.get_serialized_timestamp(),
                 "transactionHash": lock_expected.ethereum_tx_id,
                 "holder": lock_expected.holder,
                 "amount": lock_expected.amount,

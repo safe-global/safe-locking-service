@@ -36,11 +36,18 @@ class CommonEvent(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(db_index=True)
     ethereum_tx = models.ForeignKey(EthereumTx, on_delete=models.CASCADE)
     log_index = Uint32Field()
     holder = EthereumAddressV2Field()
     amount = Uint96Field()
+
+    def get_serialized_timestamp(self) -> str:
+        """
+
+        :return: serialized timestamp
+        """
+        return self.timestamp.isoformat().replace("+00:00", "Z")
 
     class Meta:
         abstract = True
