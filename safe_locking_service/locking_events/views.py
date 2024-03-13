@@ -35,6 +35,10 @@ class AboutView(GenericAPIView):
 
 
 class AllEventsView(ListAPIView):
+    """
+    Returns a paginated list of last events executed by the provided address.
+    """
+
     pagination_class = SmallPagination
     serializer_class = AllEventsDocSerializer  # Just for documentation
 
@@ -44,15 +48,12 @@ class AllEventsView(ListAPIView):
     def list(self, request, *args, **kwargs):
         safe = self.kwargs["address"]
         queryset = self.get_queryset(safe)
-        page = self.paginate_queryset(queryset)
-        serialized_data = serialize_all_events(page)
+        page_queryset = self.paginate_queryset(queryset)
+        serialized_data = serialize_all_events(page_queryset)
 
         return self.get_paginated_response(serialized_data)
 
     def get(self, request, address, format=None):
-        """
-        Returns ether/tokens transfers for a Safe
-        """
         if not fast_is_checksum_address(address):
             return Response(
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY,

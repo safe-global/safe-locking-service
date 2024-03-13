@@ -1,8 +1,15 @@
+from typing import Dict, List, Union
+
 from rest_framework import serializers
 
 from gnosis.eth.django.serializers import EthereumAddressField, Uint32Field, Uint96Field
 
-from safe_locking_service.locking_events.models import CommonEvent
+from safe_locking_service.locking_events.models import (
+    CommonEvent,
+    LockEvent,
+    UnlockEvent,
+    WithdrawnEvent,
+)
 from safe_locking_service.locking_events.services.locking_service import EventType
 
 
@@ -42,9 +49,17 @@ class AllEventsDocSerializer(serializers.Serializer):
     withdrawn_event = UnlockOrWitdrawnEventSerializer()
 
 
-def serialize_all_events(models):
+def serialize_all_events(
+    queryset: List[Union[LockEvent, UnlockEvent, WithdrawnEvent]]
+) -> List[Dict]:
+    """
+    Return a list of serialized events from provided queryset list
+
+    :param queryset:
+    :return:
+    """
     results = []
-    for model in models:
+    for model in queryset:
         model_type = model.event_type
         if model_type == EventType.LOCKED.value:
             serializer = LockEventSerializer
