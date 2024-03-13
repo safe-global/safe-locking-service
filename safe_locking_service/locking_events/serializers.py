@@ -28,8 +28,18 @@ class LockEventSerializer(CommonEventSerializer):
     pass
 
 
-class UnlockOrWitdrawEventSerializer(CommonEventSerializer):
+class UnlockOrWitdrawnEventSerializer(CommonEventSerializer):
     unlock_index = Uint32Field()
+
+
+class AllEventsDocSerializer(serializers.Serializer):
+    """
+    Just for the purpose of documenting, don't use it
+    """
+
+    lock_event = LockEventSerializer()
+    unlock_event = UnlockOrWitdrawnEventSerializer()
+    withdrawn_event = UnlockOrWitdrawnEventSerializer()
 
 
 def serialize_all_events(models):
@@ -42,7 +52,7 @@ def serialize_all_events(models):
             model_type == EventType.UNLOCKED.value
             or model_type == EventType.WITHDRAWN.value
         ):
-            serializer = UnlockOrWitdrawEventSerializer
+            serializer = UnlockOrWitdrawnEventSerializer
         else:
             raise ValueError(f"Type={model_type} not expected, cannot serialize")
 

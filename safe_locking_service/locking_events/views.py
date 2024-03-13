@@ -8,7 +8,10 @@ from rest_framework.response import Response
 from gnosis.eth.utils import fast_is_checksum_address
 
 from safe_locking_service import __version__
-from safe_locking_service.locking_events.serializers import serialize_all_events
+from safe_locking_service.locking_events.serializers import (
+    AllEventsDocSerializer,
+    serialize_all_events,
+)
 from safe_locking_service.locking_events.services.locking_service import LockingService
 from safe_locking_service.pagination import SmallPagination
 
@@ -33,6 +36,7 @@ class AboutView(GenericAPIView):
 
 class AllEventsView(ListAPIView):
     pagination_class = SmallPagination
+    serializer_class = AllEventsDocSerializer  # Just for documentation
 
     def get_queryset(self, address):
         return LockingService.get_all_events(holder=address)
