@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Index
 
 from web3.types import EventData
 
@@ -36,7 +37,7 @@ class CommonEvent(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    timestamp = models.DateTimeField(db_index=True)
+    timestamp = models.DateTimeField()
     ethereum_tx = models.ForeignKey(EthereumTx, on_delete=models.CASCADE)
     log_index = Uint32Field()
     holder = EthereumAddressV2Field()
@@ -51,6 +52,11 @@ class CommonEvent(models.Model):
 
     class Meta:
         abstract = True
+        indexes = [
+            Index(
+                fields=["holder", "-timestamp"],
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["ethereum_tx", "log_index"], name="unique_ethereum_tx_log_index"
