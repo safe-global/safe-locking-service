@@ -159,3 +159,29 @@ class StatusEventsIndexer(models.Model):
 
     def __str__(self):
         return f"EventIndexer: address={self.contract} deployed_block={self.deployed_block} last_indexed_block={self.last_indexed_block} "
+
+
+def get_leaderboard_query():
+    query = """
+            SELECT "holder", SUM(COALESCE(CASE WHEN "event_type" = 0 THEN "amount" ELSE NULL END, CASE WHEN "event_type" = 1 THEN -amount ELSE NULL END)) AS "total_locked",
+        SUM(CASE WHEN "event_type" = 1 THEN "amount" ELSE 0 END) AS "total_unlocked",
+        SUM(CASE WHEN "event_type" = 2 THEN "amount" ELSE 0 END) AS "total_withdrawn"
+        FROM (
+            (SELECT "locking_events_lockevent"."holder" AS "holder",
+                   "locking_events_lockevent"."amount" AS "amount",
+                    0 AS "event_type"
+            FROM "locking_events_lockevent"
+            ) UNION ALL (
+            SELECT "locking_events_unlockevent"."holder" AS "holder",
+                   "locking_events_unlockevent"."amount" AS "amount",
+                    1 AS "event_type"
+            FROM "locking_events_unlockevent")
+            UNION ALL
+            (SELECT "locking_events_withdrawnevent"."holder" AS "holder",
+                    "locking_events_withdrawnevent"."amount" AS "amount",
+                    2 AS "event_type"
+            FROM "locking_events_withdrawnevent")
+        ) AS "UNION_TABLE"
+        GROUP BY "holder" ORDER BY "total_locked" DESC
+            """
+    return query

@@ -2,7 +2,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
 from rest_framework import status
-from rest_framework.generics import GenericAPIView, ListAPIView
+from rest_framework.generics import GenericAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 
 from gnosis.eth.utils import fast_is_checksum_address
@@ -10,10 +10,11 @@ from gnosis.eth.utils import fast_is_checksum_address
 from safe_locking_service import __version__
 from safe_locking_service.locking_events.serializers import (
     AllEventsDocSerializer,
+    LeaderBoardSerializer,
     serialize_all_events,
 )
 from safe_locking_service.locking_events.services.locking_service import LockingService
-from safe_locking_service.pagination import SmallPagination
+from safe_locking_service.pagination import CustomListPagination, SmallPagination
 
 
 class AboutView(GenericAPIView):
@@ -65,3 +66,38 @@ class AllEventsView(ListAPIView):
             )
 
         return super().get(request, address)
+
+
+class LeaderBoardView(ListAPIView):
+    """
+    Returns a paginated list of last events executed by the provided address.
+    """
+
+    pagination_class = CustomListPagination
+    serializer_class = LeaderBoardSerializer
+
+    def get_queryset(self, limit, offset):
+        return LockingService.get_leader_board(limit=limit, offset=offset)
+
+    def list(self, request, *args, **kwargs):
+        paginator = CustomListPagination(self.request)
+        queryset = self.get_queryset(paginator.limit, paginator.offset)
+        paginator.set_count(LockingService.get_count())
+        serializer = LeaderBoardSerializer(queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+    def get(self, request, format=None):
+        return super().get(request)
+
+
+class LeaderBoardPositionView(RetrieveAPIView):
+    serializer_class = LeaderBoardSerializer
+
+    def get_queryset(self, address):
+        return LockingService.get_leader_board(holder=address)
+
+    def get(self, request, address, format=None):
+        queryset = self.get_queryset(address)
+        serializer = LeaderBoardSerializer(queryset)
+        return Response(status=status.HTTP_200_OK, data=serializer.data)
