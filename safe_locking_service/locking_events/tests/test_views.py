@@ -97,3 +97,67 @@ class TestQueueService(TestCase):
                 "logIndex": lock_expected.log_index,
             },
         )
+
+    def test_get_leader_board_view(self):
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard"), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 0)
+        address = Account.create().address
+        LockEventFactory(
+            holder=address, amount=1000, timestamp=timezone.now() - timedelta(days=2)
+        )
+        UnlockEventFactory(
+            holder=address, amount=500, timestamp=timezone.now() - timedelta(days=1)
+        )
+        WithdrawnEventFactory(holder=address, amount=500, timestamp=timezone.now())
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard"), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 1)
+
+        self.assertCountEqual(
+            response.json()["results"][0],
+            {
+                "position": 1,
+                "holder": address,
+                "lockedAmount": str(500),
+                "unlockedAmount": str(500),
+                "withdrawnAmount": str(500),
+            },
+        )
+        address_2 = Account.create().address
+        LockEventFactory(
+            holder=address_2, amount=1500, timestamp=timezone.now() - timedelta(days=2)
+        )
+        UnlockEventFactory(
+            holder=address_2, amount=500, timestamp=timezone.now() - timedelta(days=1)
+        )
+        WithdrawnEventFactory(holder=address_2, amount=500, timestamp=timezone.now())
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard"), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 2)
+        self.maxDiff = None
+        self.assertCountEqual(
+            response.json()["results"],
+            [
+                {
+                    "holder": address_2,
+                    "position": 1,
+                    "lockedAmount": str(1000),
+                    "unlockedAmount": str(500),
+                    "withdrawnAmount": str(500),
+                },
+                {
+                    "holder": address,
+                    "position": 2,
+                    "lockedAmount": str(500),
+                    "unlockedAmount": str(500),
+                    "withdrawnAmount": str(500),
+                },
+            ],
+        )

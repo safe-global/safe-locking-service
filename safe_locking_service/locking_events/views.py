@@ -82,7 +82,7 @@ class LeaderBoardView(ListAPIView):
     def list(self, request, *args, **kwargs):
         paginator = CustomListPagination(self.request)
         queryset = self.get_queryset(paginator.limit, paginator.offset)
-        paginator.set_count(LockingService.get_count())
+        paginator.set_count(LockingService.get_leader_board_count())
         serializer = LeaderBoardSerializer(queryset, many=True)
 
         return paginator.get_paginated_response(serializer.data)
