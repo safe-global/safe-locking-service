@@ -74,3 +74,11 @@ def serialize_all_events(
         serialized = serializer(model)
         results.append(serialized.data)
     return results
+
+
+class LeaderBoardSerializer(serializers.Serializer):
+    holder = EthereumAddressField()
+    position = serializers.IntegerField()
+    lockedAmount = Uint96Field()
+    unlockedAmount = Uint96Field()
+    withdrawnAmount = Uint96Field()
