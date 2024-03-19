@@ -81,7 +81,8 @@ class LockingService:
                 query = f"SELECT * from ({query}) AS TEMP WHERE holder=%s"
                 holder_address = HexBytes(holder)
                 cursor.execute(query, [holder_address])
-                return dictfetchall(cursor)[0]
+                if result := dictfetchall(cursor):
+                    return result[0]
             else:
                 query = f"{query} LIMIT {limit} OFFSET {offset}"
                 cursor.execute(query)

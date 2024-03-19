@@ -11,6 +11,6 @@ urlpatterns = [
     path(
         "leaderboard/<str:address>/",
         views.LeaderBoardPositionView.as_view(),
-        name="leaderboard-holder",
+        name="leaderboard",
     ),
 ]

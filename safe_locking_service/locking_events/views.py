@@ -98,6 +98,20 @@ class LeaderBoardPositionView(RetrieveAPIView):
         return LockingService.get_leader_board(holder=address)
 
     def get(self, request, address, format=None):
+        if not fast_is_checksum_address(address):
+            return Response(
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                data={
+                    "code": 1,
+                    "message": "Checksum address validation failed",
+                    "arguments": [address],
+                },
+            )
         queryset = self.get_queryset(address)
+        if not queryset:
+            return Response(
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         serializer = LeaderBoardSerializer(queryset)
         return Response(status=status.HTTP_200_OK, data=serializer.data)
