@@ -395,6 +395,10 @@ INDEXER_BLOCKS_BEHIND = env.int(
     "INDEXER_BLOCKS_BEHIND", default=0
 )  # Number of blocks behind last block to avoid a reorg.
 
+INDEXER_REORG_BLOCKS = env.int("INDEXER_REORG_BLOCKS", default=10)
+
+INDEXER_BLOCK_REORG_BATCH = env.int("INDEXER_BLOCK_REORG_BATCH", default=100)
+
 # Shell Plus
 # ------------------------------------------------------------------------------
 SHELL_PLUS_PRINT_SQL_TRUNCATE = env.int("SHELL_PLUS_PRINT_SQL_TRUNCATE", default=10_000)

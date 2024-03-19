@@ -11,11 +11,29 @@ from gnosis.eth.django.models import (
 )
 
 
+class EthereumTxQuerySet(models.QuerySet):
+    def not_confirmed(self):
+        """
+        :param to_block_number:
+        :return: Block not confirmed until ``to_block_number``, if provided
+        """
+        queryset = self.filter(confirmed=False)
+        return queryset
+
+    def since_block(self, block_number: int):
+        return self.filter(block_number__gte=block_number)
+
+    def until_block(self, block_number: int):
+        return self.filter(block_number__lte=block_number)
+
+
 class EthereumTx(models.Model):
+    objects = models.Manager.from_queryset(EthereumTxQuerySet)
     tx_hash = Keccak256Field(primary_key=True)
     block_hash = Keccak256Field()
     block_number = Uint32Field()
     block_timestamp = models.DateTimeField()
+    confirmed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Transaction hash {self.tx_hash}"
