@@ -90,6 +90,7 @@ class LockingService:
 
     @staticmethod
     def get_leader_board_count():
+        # TODO add a properly count less expensive
         query = f"""
             SELECT COUNT(*) FROM ({get_leaderboard_query()}) AS RESULT_TABLE
         """
