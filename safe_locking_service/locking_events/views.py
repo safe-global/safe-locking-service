@@ -44,7 +44,8 @@ class AllEventsView(ListAPIView):
     serializer_class = AllEventsDocSerializer  # Just for documentation
 
     def get_queryset(self, address):
-        return LockingService.get_all_events(holder=address)
+        locking_service = LockingService(address)
+        return locking_service.get_all_events_by_holder()
 
     def list(self, request, *args, **kwargs):
         safe = self.kwargs["address"]
@@ -95,7 +96,8 @@ class LeaderBoardPositionView(RetrieveAPIView):
     serializer_class = LeaderBoardSerializer
 
     def get_queryset(self, address):
-        return LockingService.get_leader_board(holder=address)
+        locking_service = LockingService(address)
+        return locking_service.get_leader_board_position()
 
     def get(self, request, address, format=None):
         if not fast_is_checksum_address(address):
