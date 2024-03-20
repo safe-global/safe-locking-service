@@ -71,7 +71,7 @@ class AllEventsView(ListAPIView):
 
 class LeaderBoardView(ListAPIView):
     """
-    Returns a paginated list of last events executed by the provided address.
+    Returns the leaderboard list ordered by lockedAmount.
     """
 
     pagination_class = CustomListPagination
@@ -93,6 +93,10 @@ class LeaderBoardView(ListAPIView):
 
 
 class LeaderBoardPositionView(RetrieveAPIView):
+    """
+    Returns the leaderboard data for a provided address.
+    """
+
     serializer_class = LeaderBoardSerializer
 
     def get_queryset(self, address):

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from django.db import connection
 from django.db.models import IntegerField, Value
@@ -20,7 +20,7 @@ class EventType(Enum):
     WITHDRAWN = 2
 
 
-def dictfetchall(cursor):
+def dictfetchall(cursor) -> List[Dict]:
     """
     Return all rows from a cursor as a dict.
     Assume the column names are unique.
@@ -64,6 +64,11 @@ class LockingService:
 
     @classmethod
     def _get_leader_board_query(cls) -> str:
+        """
+        Get raw leaderboard SQL query
+
+        :return:
+        """
         union_lock_unlock_withdraw_events = """
                         (SELECT "locking_events_lockevent"."holder" AS "holder",
                                "locking_events_lockevent"."amount" AS "amount",
@@ -100,9 +105,11 @@ class LockingService:
         return leader_board_query
 
     @classmethod
-    def get_leader_board(cls, limit: Optional[int] = 10, offset: Optional[int] = 0):
+    def get_leader_board(
+        cls, limit: Optional[int] = 10, offset: Optional[int] = 0
+    ) -> List[Dict]:
         """
-        Return leaderboard list or just LeaderBoard data for provided holder
+        Return the leaderboard list ordered by lockedAmount
 
         :return:
         """
@@ -112,6 +119,11 @@ class LockingService:
             return dictfetchall(cursor)
 
     def get_leader_board_position(self) -> Optional[Dict]:
+        """
+        Get a holder data from the leaderboard
+
+        :return:
+        """
         query = (
             f"SELECT * from ({self._get_leader_board_query()}) AS TEMP WHERE holder=%s"
         )
