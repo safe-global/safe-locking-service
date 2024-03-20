@@ -20,7 +20,7 @@ class EventType(Enum):
     WITHDRAWN = 2
 
 
-def dictfetchall(cursor) -> List[Dict]:
+def fectch_all_from_cursor(cursor) -> List[Dict]:
     """
     Return all rows from a cursor as a dict.
     Assume the column names are unique.
@@ -41,7 +41,7 @@ class LockingService:
         :param holder:
         :return:
         """
-        # Add field unlock_index to Null to be able to apply SQL union
+        # Set field unlock_index to Null to be able to apply SQL union
         # Add event_type to correctly serialize later
         lock_events = LockEvent.objects.filter(holder=self.holder).annotate(
             unlock_index=Value(None, output_field=IntegerField()),

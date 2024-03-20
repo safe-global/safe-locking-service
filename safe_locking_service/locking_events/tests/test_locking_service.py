@@ -3,11 +3,11 @@ from django.test import TestCase
 from eth_account import Account
 from hexbytes import HexBytes
 
-from safe_locking_service.locking_events.services.locking_service import (
+from ..services.locking_service import (
     EventType,
     LockingService,
 )
-from safe_locking_service.locking_events.tests.utils import add_sorted_events
+from .utils import add_sorted_events
 
 
 class TestLockingService(TestCase):

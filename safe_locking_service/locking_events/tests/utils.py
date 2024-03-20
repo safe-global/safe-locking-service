@@ -7,7 +7,7 @@ from eth_typing import ChecksumAddress
 from web3 import Web3
 from web3.contract import Contract
 
-from safe_locking_service.locking_events.tests.factories import (
+from .factories import (
     LockEventFactory,
     UnlockEventFactory,
     WithdrawnEventFactory,

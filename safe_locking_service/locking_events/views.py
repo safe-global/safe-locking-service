@@ -71,7 +71,7 @@ class AllEventsView(ListAPIView):
 
 class LeaderBoardView(ListAPIView):
     """
-    Returns the leaderboard list ordered by lockedAmount.
+    Returns the leaderboard ordered by `lockedAmount`.
     """
 
     pagination_class = CustomListPagination
