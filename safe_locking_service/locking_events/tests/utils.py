@@ -7,11 +7,7 @@ from eth_typing import ChecksumAddress
 from web3 import Web3
 from web3.contract import Contract
 
-from .factories import (
-    LockEventFactory,
-    UnlockEventFactory,
-    WithdrawnEventFactory,
-)
+from .factories import LockEventFactory, UnlockEventFactory, WithdrawnEventFactory
 
 
 def erc20_approve(
