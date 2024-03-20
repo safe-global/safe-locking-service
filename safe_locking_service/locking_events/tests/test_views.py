@@ -1,12 +1,7 @@
-from datetime import timedelta
-from typing import Optional
-
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
 
 from eth_account import Account
-from eth_typing import ChecksumAddress
 from rest_framework import status
 
 from safe_locking_service.locking_events.models import (
@@ -14,44 +9,11 @@ from safe_locking_service.locking_events.models import (
     UnlockEvent,
     WithdrawnEvent,
 )
-from safe_locking_service.locking_events.tests.factories import (
-    LockEventFactory,
-    UnlockEventFactory,
-    WithdrawnEventFactory,
-)
+
+from .utils import add_sorted_events
 
 
-class TestQueueService(TestCase):
-    def _add_sorted_events(
-        self,
-        address: ChecksumAddress,
-        lock_amount: Optional[int],
-        unlock_umount: Optional[int],
-        withdrawn_amount: Optional[int],
-    ):
-        """
-        Add one event for each type in order (lock, unlock, withdraw)
-
-        :param address:
-        :param lock_amount:
-        :param unlock_umount:
-        :param withdrawn_amount:
-        :return:
-        """
-        LockEventFactory(
-            holder=address,
-            amount=lock_amount,
-            timestamp=timezone.now() - timedelta(days=2),
-        )
-        UnlockEventFactory(
-            holder=address,
-            amount=unlock_umount,
-            timestamp=timezone.now() - timedelta(days=1),
-        )
-        WithdrawnEventFactory(
-            holder=address, amount=withdrawn_amount, timestamp=timezone.now()
-        )
-
+class TestViews(TestCase):
     def test_about_view(self):
         url = reverse("v1:locking_events:about")
         response = self.client.get(url, format="json")
@@ -72,14 +34,7 @@ class TestQueueService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 0)
 
-        LockEventFactory(
-            holder=address, amount=1000, timestamp=timezone.now() - timedelta(days=2)
-        )
-        UnlockEventFactory(
-            holder=address, amount=500, timestamp=timezone.now() - timedelta(days=1)
-        )
-        WithdrawnEventFactory(holder=address, amount=500, timestamp=timezone.now())
-
+        add_sorted_events(1000, 500, 500)
         response = self.client.get(
             reverse("v1:locking_events:all-events", args=(address,)), format="json"
         )
@@ -139,7 +94,7 @@ class TestQueueService(TestCase):
         self.assertEqual(len(response.data["results"]), 0)
 
         address = Account.create().address
-        self._add_sorted_events(address, 1000, 500, 500)
+        add_sorted_events(address, 1000, 500, 500)
         response = self.client.get(
             reverse("v1:locking_events:leaderboard"), format="json"
         )
@@ -158,7 +113,7 @@ class TestQueueService(TestCase):
         )
 
         address_2 = Account.create().address
-        self._add_sorted_events(address_2, 1500, 500, 500)
+        add_sorted_events(address_2, 1500, 500, 500)
         response = self.client.get(
             reverse("v1:locking_events:leaderboard"), format="json"
         )
@@ -200,7 +155,7 @@ class TestQueueService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        self._add_sorted_events(address, 1000, 500, 500)
+        add_sorted_events(address, 1000, 500, 500)
         response = self.client.get(
             reverse("v1:locking_events:leaderboard", args=(address,)), format="json"
         )
@@ -218,7 +173,7 @@ class TestQueueService(TestCase):
         )
 
         address_2 = Account.create().address
-        self._add_sorted_events(address_2, 1500, 500, 500)
+        add_sorted_events(address_2, 1500, 500, 500)
         response = self.client.get(
             reverse("v1:locking_events:leaderboard", args=(address,)), format="json"
         )

@@ -1,7 +1,17 @@
+from datetime import timedelta
+
+from django.utils import timezone
+
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from web3 import Web3
 from web3.contract import Contract
+
+from safe_locking_service.locking_events.tests.factories import (
+    LockEventFactory,
+    UnlockEventFactory,
+    WithdrawnEventFactory,
+)
 
 
 def erc20_approve(
@@ -51,3 +61,33 @@ def locking_contract_unlock(
     tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
     tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     return tx_receipt
+
+
+def add_sorted_events(
+    address: ChecksumAddress,
+    lock_amount: int,
+    unlock_umount: int,
+    withdrawn_amount: int,
+):
+    """
+    Add one event for each type in order (lock, unlock, withdraw)
+
+    :param address:
+    :param lock_amount:
+    :param unlock_umount:
+    :param withdrawn_amount:
+    :return:
+    """
+    LockEventFactory(
+        holder=address,
+        amount=lock_amount,
+        timestamp=timezone.now() - timedelta(days=2),
+    )
+    UnlockEventFactory(
+        holder=address,
+        amount=unlock_umount,
+        timestamp=timezone.now() - timedelta(days=1),
+    )
+    WithdrawnEventFactory(
+        holder=address, amount=withdrawn_amount, timestamp=timezone.now()
+    )

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Dict, Optional
 
 from django.db import connection
 from django.db.models import IntegerField, Value
@@ -111,7 +111,7 @@ class LockingService:
             cursor.execute(query)
             return dictfetchall(cursor)
 
-    def get_leader_board_position(self):
+    def get_leader_board_position(self) -> Optional[Dict]:
         query = (
             f"SELECT * from ({self._get_leader_board_query()}) AS TEMP WHERE holder=%s"
         )
