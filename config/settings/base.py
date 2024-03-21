@@ -242,7 +242,7 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {}
 CELERY_ROUTES = (
     [
         (
-            "safe_locking_service.locking_events.tasks.index_locking_events_task",
+            "safe_locking_service.locking_events.tasks.*",
             {"queue": "events"},
         ),
     ],

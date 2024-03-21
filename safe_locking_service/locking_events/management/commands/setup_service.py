@@ -75,6 +75,11 @@ TASKS = [
         period=IntervalSchedule.SECONDS,
         enabled=True,
     ),
+    CeleryTaskConfiguration(
+        name="safe_locking_service.locking_events.tasks.check_reorgs_task",
+        description="Check Reorgs (every minute)",
+        cron=CronDefinition(),  # cron every minute * * * * *
+    ),
 ]
 
 

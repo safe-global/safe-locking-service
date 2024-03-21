@@ -1,5 +1,6 @@
 import logging
 from functools import cache
+from typing import Optional
 
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -48,30 +49,32 @@ class ReorgService:
         :return:
         """
         blocks_to_confirm = []
+        reorg_block: Optional[int] = None
         for database_block, blockchain_block in zip(database_blocks, blockchain_blocks):
             if HexBytes(blockchain_block["hash"]) == HexBytes(
                 database_block.block_hash
             ):
                 # Check all the blocks but only mark safe ones as confirmed
-                if database_block.number <= confirmation_block:
+                if database_block.block_number <= confirmation_block:
                     logger.debug(
                         "Block with number=%d and hash=%s is matching blockchain one, setting as confirmed",
-                        database_block.number,
+                        database_block.block_number,
                         HexBytes(blockchain_block["hash"]).hex(),
                     )
+                    database_block.confirmed = True
                     blocks_to_confirm.append(database_block)
-                else:
-                    logger.warning(
-                        "Block with number=%d and hash=%s is not matching blockchain hash=%s, reorg found",
-                        database_block.number,
-                        HexBytes(database_block.block_hash).hex(),
-                        HexBytes(blockchain_block["hash"]).hex(),
-                    )
-                    break
+            else:
+                logger.warning(
+                    "Block with number=%d and hash=%s is not matching blockchain hash=%s, reorg found",
+                    database_block.block_number,
+                    HexBytes(database_block.block_hash).hex(),
+                    HexBytes(blockchain_block["hash"]).hex(),
+                )
+                reorg_block = database_block.block_number
+                break
         # Update confirmed blocks
-        blocks_to_confirm.uptade(confirmed=True)
-        if database_block.number < confirmation_block:
-            return database_block.number
+        EthereumTx.objects.bulk_update(blocks_to_confirm, ["confirmed"])
+        return reorg_block
 
     def run_check_reorg(self):
         """
@@ -85,7 +88,7 @@ class ReorgService:
         current_block_number = self.ethereum_client.current_block_number
         confirmation_block = current_block_number - self.eth_reorg_blocks
         queryset = (
-            EthereumTx.objects.since_block(first_not_confirmed_block.number)
+            EthereumTx.objects.since_block(first_not_confirmed_block.block_number)
             .only("block_number", "block_hash", "confirmed")
             .order_by("block_number")
         )
@@ -96,7 +99,7 @@ class ReorgService:
             block_numbers = []
             for block in current_page.object_list:
                 database_blocks.append(block)
-                block_numbers.append(block.number)
+                block_numbers.append(block.block_number)
             blockchain_blocks = self.ethereum_client.get_blocks(
                 block_numbers, full_transactions=False
             )

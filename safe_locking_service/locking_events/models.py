@@ -11,11 +11,19 @@ from gnosis.eth.django.models import (
 )
 
 
+class EthereumTxManager(models.Manager):
+    """
+    It is necessary to configure EthereumTxQuerySet
+    """
+
+    pass
+
+
 class EthereumTxQuerySet(models.QuerySet):
     def not_confirmed(self):
         """
         :param to_block_number:
-        :return: Block not confirmed until ``to_block_number``, if provided
+        :return: Block not confirmed
         """
         queryset = self.filter(confirmed=False)
         return queryset
@@ -28,7 +36,7 @@ class EthereumTxQuerySet(models.QuerySet):
 
 
 class EthereumTx(models.Model):
-    objects = models.Manager.from_queryset(EthereumTxQuerySet)
+    objects = EthereumTxManager.from_queryset(EthereumTxQuerySet)()
     tx_hash = Keccak256Field(primary_key=True)
     block_hash = Keccak256Field()
     block_number = Uint32Field()
