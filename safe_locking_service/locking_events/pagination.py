@@ -17,7 +17,7 @@ class CustomListPagination(LimitOffsetPagination):
         self.request = request
         self.limit = self.get_limit(request)
         self.offset = self.get_offset(request)
-        self.count: int = None
+        self.count: Optional[int] = None
 
     def set_count(self, value):
         self.count = value

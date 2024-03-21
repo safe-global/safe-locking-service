@@ -30,13 +30,13 @@ class EventType(Enum):
     WITHDRAWN = 2
 
 
-def fectch_all_from_cursor(cursor: CursorWrapper) -> List[LeaderBoardRow]:
+def fetch_all_from_cursor(cursor: CursorWrapper) -> List[LeaderBoardRow]:
     """
     Return all rows from a cursor as a dict.
     Assume the column names are unique.
 
     :param cursor:
-    :return:
+    :return: all rows from a cursor as a dict.
     """
     columns = [col[0] for col in cursor.description]
 
