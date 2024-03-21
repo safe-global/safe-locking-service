@@ -23,10 +23,10 @@ class TestLockingService(TestCase):
             self.assertEqual(event.amount, 1000)
 
     def test_get_leader_board(self):
-        self.assertEqual(len(LockingService.get_leader_board()), 0)
+        self.assertEqual(len(LockingService.get_leader_board(limit=10, offset=0)), 0)
         address = Account.create().address
         add_sorted_events(address, 1000, 1000, 1000)
-        leader_board = LockingService.get_leader_board()
+        leader_board = LockingService.get_leader_board(limit=10, offset=0)
         self.assertEqual(len(leader_board), 1)
         self.assertEqual(HexBytes(leader_board[0]["holder"].hex()), HexBytes(address))
         self.assertEqual(leader_board[0]["position"], 1)
@@ -35,7 +35,7 @@ class TestLockingService(TestCase):
         self.assertEqual(leader_board[0]["withdrawnAmount"], 1000)
         address_2 = Account.create().address
         add_sorted_events(address_2, 2000, 1000, 1000)
-        leader_board = LockingService.get_leader_board()
+        leader_board = LockingService.get_leader_board(limit=10, offset=0)
         self.assertEqual(len(leader_board), 2)
         self.assertEqual(HexBytes(leader_board[0]["holder"].hex()), HexBytes(address_2))
         self.assertEqual(leader_board[0]["position"], 1)

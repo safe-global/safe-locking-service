@@ -33,8 +33,9 @@ class TestViews(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(response.data["count"], 0)
 
-        add_sorted_events(1000, 500, 500)
+        add_sorted_events(address, 1000, 500, 500)
         response = self.client.get(
             reverse("v1:locking_events:all-events", args=(address,)), format="json"
         )
@@ -92,6 +93,7 @@ class TestViews(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(response.data["count"], 0)
 
         address = Account.create().address
         add_sorted_events(address, 1000, 500, 500)

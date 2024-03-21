@@ -85,4 +85,4 @@ class LeaderBoardSerializer(serializers.Serializer):
     withdrawnAmount = Uint96Field()
 
     def get_holder(self, obj: Dict):
-        return fast_to_checksum_address(obj["holder"].hex())
+        return fast_to_checksum_address(bytes(obj["holder"]))

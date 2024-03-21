@@ -8,13 +8,16 @@ from rest_framework.response import Response
 from gnosis.eth.utils import fast_is_checksum_address
 
 from safe_locking_service import __version__
+from safe_locking_service.locking_events.pagination import (
+    CustomListPagination,
+    SmallPagination,
+)
 from safe_locking_service.locking_events.serializers import (
     AllEventsDocSerializer,
     LeaderBoardSerializer,
     serialize_all_events,
 )
 from safe_locking_service.locking_events.services.locking_service import LockingService
-from safe_locking_service.pagination import CustomListPagination, SmallPagination
 
 
 class AboutView(GenericAPIView):

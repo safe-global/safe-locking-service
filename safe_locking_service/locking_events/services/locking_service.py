@@ -24,6 +24,9 @@ def fectch_all_from_cursor(cursor) -> List[Dict]:
     """
     Return all rows from a cursor as a dict.
     Assume the column names are unique.
+
+    :param cursor:
+    :return:
     """
     columns = [col[0] for col in cursor.description]
 
@@ -105,9 +108,7 @@ class LockingService:
         return leader_board_query
 
     @classmethod
-    def get_leader_board(
-        cls, limit: Optional[int] = 10, offset: Optional[int] = 0
-    ) -> List[Dict]:
+    def get_leader_board(cls, limit: int, offset: int) -> List[Dict]:
         """
         Return the leaderboard list ordered by lockedAmount
 
@@ -116,7 +117,7 @@ class LockingService:
         query = f"{cls._get_leader_board_query()} LIMIT {limit} OFFSET {offset}"
         with connection.cursor() as cursor:
             cursor.execute(query)
-            return dictfetchall(cursor)
+            return fectch_all_from_cursor(cursor)
 
     def get_leader_board_position(self) -> Optional[Dict]:
         """
@@ -130,7 +131,7 @@ class LockingService:
         with connection.cursor() as cursor:
             holder_address = HexBytes(self.holder)
             cursor.execute(query, [holder_address])
-            if result := dictfetchall(cursor):
+            if result := fectch_all_from_cursor(cursor):
                 return result[0]
 
     @staticmethod
