@@ -3,6 +3,7 @@ from typing import Dict, List, Union
 from rest_framework import serializers
 
 from gnosis.eth.django.serializers import EthereumAddressField, Uint32Field, Uint96Field
+from gnosis.eth.utils import fast_to_checksum_address
 
 from safe_locking_service.locking_events.models import (
     CommonEvent,
@@ -74,3 +75,14 @@ def serialize_all_events(
         serialized = serializer(model)
         results.append(serialized.data)
     return results
+
+
+class LeaderBoardSerializer(serializers.Serializer):
+    holder = serializers.SerializerMethodField()
+    position = serializers.IntegerField()
+    lockedAmount = Uint96Field()
+    unlockedAmount = Uint96Field()
+    withdrawnAmount = Uint96Field()
+
+    def get_holder(self, obj: Dict):
+        return fast_to_checksum_address(bytes(obj["holder"]))

@@ -1,8 +1,5 @@
-from datetime import timedelta
-
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
 
 from eth_account import Account
 from rest_framework import status
@@ -12,14 +9,11 @@ from safe_locking_service.locking_events.models import (
     UnlockEvent,
     WithdrawnEvent,
 )
-from safe_locking_service.locking_events.tests.factories import (
-    LockEventFactory,
-    UnlockEventFactory,
-    WithdrawnEventFactory,
-)
+
+from .utils import add_sorted_events
 
 
-class TestQueueService(TestCase):
+class TestViews(TestCase):
     def test_about_view(self):
         url = reverse("v1:locking_events:about")
         response = self.client.get(url, format="json")
@@ -32,21 +26,16 @@ class TestQueueService(TestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
         address = Account.create().address
         response = self.client.get(
             reverse("v1:locking_events:all-events", args=(address,)), format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(response.data["count"], 0)
 
-        LockEventFactory(
-            holder=address, amount=1000, timestamp=timezone.now() - timedelta(days=2)
-        )
-        UnlockEventFactory(
-            holder=address, amount=500, timestamp=timezone.now() - timedelta(days=1)
-        )
-        WithdrawnEventFactory(holder=address, amount=500, timestamp=timezone.now())
-
+        add_sorted_events(address, 1000, 500, 500)
         response = self.client.get(
             reverse("v1:locking_events:all-events", args=(address,)), format="json"
         )
@@ -95,5 +84,110 @@ class TestQueueService(TestCase):
                 "holder": lock_expected.holder,
                 "amount": lock_expected.amount,
                 "logIndex": lock_expected.log_index,
+            },
+        )
+
+    def test_get_leader_board_view(self):
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard"), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(response.data["count"], 0)
+
+        address = Account.create().address
+        add_sorted_events(address, 1000, 500, 500)
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard"), format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertCountEqual(
+            response.json()["results"][0],
+            {
+                "position": 1,
+                "holder": address,
+                "lockedAmount": str(500),
+                "unlockedAmount": str(500),
+                "withdrawnAmount": str(500),
+            },
+        )
+
+        address_2 = Account.create().address
+        add_sorted_events(address_2, 1500, 500, 500)
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard"), format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 2)
+        self.maxDiff = None
+        self.assertCountEqual(
+            response.json()["results"],
+            [
+                {
+                    "holder": address_2,
+                    "position": 1,
+                    "lockedAmount": str(1000),
+                    "unlockedAmount": str(500),
+                    "withdrawnAmount": str(500),
+                },
+                {
+                    "holder": address,
+                    "position": 2,
+                    "lockedAmount": str(500),
+                    "unlockedAmount": str(500),
+                    "withdrawnAmount": str(500),
+                },
+            ],
+        )
+
+    def test_leader_board_position_view(self):
+        not_checksumed_address = "0x15fc97934bd2d140cd1ccbf7B164dec7ff64e667"
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard", args=(not_checksumed_address,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        address = Account.create().address
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        add_sorted_events(address, 1000, 500, 500)
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard", args=(address,)), format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "holder": address,
+                "position": 1,
+                "lockedAmount": str(500),
+                "unlockedAmount": str(500),
+                "withdrawnAmount": str(500),
+            },
+        )
+
+        address_2 = Account.create().address
+        add_sorted_events(address_2, 1500, 500, 500)
+        response = self.client.get(
+            reverse("v1:locking_events:leaderboard", args=(address,)), format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {
+                "holder": address,
+                "position": 2,
+                "lockedAmount": str(500),
+                "unlockedAmount": str(500),
+                "withdrawnAmount": str(500),
             },
         )
