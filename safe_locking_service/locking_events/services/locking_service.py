@@ -1,7 +1,9 @@
+from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TypedDict
 
 from django.db import connection
+from django.db.backends.utils import CursorWrapper
 from django.db.models import IntegerField, Value
 
 from eth_typing import ChecksumAddress
@@ -14,13 +16,21 @@ from safe_locking_service.locking_events.models import (
 )
 
 
+class LeaderBoardRow(TypedDict):
+    position: int
+    holder: ChecksumAddress
+    lockedAmount: Decimal
+    unlockedAmount: Decimal
+    withdrawnAmount: Decimal
+
+
 class EventType(Enum):
     LOCKED = 0
     UNLOCKED = 1
     WITHDRAWN = 2
 
 
-def fectch_all_from_cursor(cursor) -> List[Dict]:
+def fectch_all_from_cursor(cursor: CursorWrapper) -> List[LeaderBoardRow]:
     """
     Return all rows from a cursor as a dict.
     Assume the column names are unique.
