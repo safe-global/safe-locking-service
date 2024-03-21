@@ -44,7 +44,7 @@ def check_reorgs_task(self):
         with only_one_running_task(self):
             logger.info("Start checking of reorgs")
             reorg_service: ReorgService = get_reorg_service()
-            reorg_block_number = reorg_service.run_check_reorgs()
+            reorg_block_number = reorg_service.run_check_reorg()
             if reorg_block_number:
                 logger.warning("Reorg found for block-number=%d", reorg_block_number)
                 # Stopping running tasks is not possible with gevent
