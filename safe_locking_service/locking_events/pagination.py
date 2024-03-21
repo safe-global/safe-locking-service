@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.http import HttpRequest
 
 from rest_framework.pagination import LimitOffsetPagination

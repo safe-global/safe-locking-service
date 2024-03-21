@@ -127,7 +127,7 @@ class LockingService:
         query = f"{cls._get_leader_board_query()} LIMIT {limit} OFFSET {offset}"
         with connection.cursor() as cursor:
             cursor.execute(query)
-            return fectch_all_from_cursor(cursor)
+            return fetch_all_from_cursor(cursor)
 
     def get_leader_board_position(self) -> Optional[Dict]:
         """
@@ -141,7 +141,7 @@ class LockingService:
         with connection.cursor() as cursor:
             holder_address = HexBytes(self.holder)
             cursor.execute(query, [holder_address])
-            if result := fectch_all_from_cursor(cursor):
+            if result := fetch_all_from_cursor(cursor):
                 return result[0]
 
     @staticmethod
