@@ -77,7 +77,7 @@ class LeaderBoardView(ListAPIView):
     Returns the leaderboard ordered by `lockedAmount`.
     """
 
-    pagination_class = CustomListPagination
+    pagination_class = SmallPagination  # Just for documentation
     serializer_class = LeaderBoardSerializer
 
     def get_queryset(self, limit, offset):
