@@ -40,13 +40,15 @@ class ReorgService:
         self.eth_reorg_blocks = eth_reorg_blocks
         self.eth_reorg_blocks_batch = eth_reorg_blocks_batch
 
-    def check_reorg(self, database_blocks, blockchain_blocks, confirmation_block):
+    def check_reorg(
+        self, database_blocks, blockchain_blocks, confirmation_block
+    ) -> Optional[int]:
         """
 
         :param database_blocks:
         :param blockchain_blocks:
         :param confirmation_block:
-        :return:
+        :return block number of reorg block if reorg is detected:
         """
         blocks_to_confirm = []
         reorg_block: Optional[int] = None
@@ -80,19 +82,16 @@ class ReorgService:
         """
         :return: Number of the oldest block with reorg detected. `None` if not reorg found
         """
-        first_not_confirmed_block = (
-            EthereumTx.objects.not_confirmed().order_by("block_number").first()
-        )
-        if not first_not_confirmed_block:
-            return None
-        current_block_number = self.ethereum_client.current_block_number
-        confirmation_block = current_block_number - self.eth_reorg_blocks
-        queryset = (
-            EthereumTx.objects.since_block(first_not_confirmed_block.block_number)
+        unconfirmed_blocks = (
+            EthereumTx.objects.not_confirmed()
             .only("block_number", "block_hash", "confirmed")
             .order_by("block_number")
         )
-        paginator = Paginator(queryset, per_page=self.eth_reorg_blocks_batch)
+        if not unconfirmed_blocks:
+            return None
+        current_block_number = self.ethereum_client.current_block_number
+        confirmation_block = current_block_number - self.eth_reorg_blocks
+        paginator = Paginator(unconfirmed_blocks, per_page=self.eth_reorg_blocks_batch)
         for page_number in paginator.page_range:
             current_page = paginator.get_page(page_number)
             database_blocks = []

@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Index
+from django.db.models import Index, Q
 
 from web3.types import EventData
 
@@ -42,6 +42,15 @@ class EthereumTx(models.Model):
     block_number = Uint32Field()
     block_timestamp = models.DateTimeField()
     confirmed = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            Index(
+                name="Not_confirmed_block_idx",
+                fields=["block_number"],
+                condition=Q(confirmed=False),
+            ),
+        ]
 
     def __str__(self):
         return f"Transaction hash {self.tx_hash}"

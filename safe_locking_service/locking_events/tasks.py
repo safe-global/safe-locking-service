@@ -5,18 +5,9 @@ from celery import app
 from celery.utils.log import get_task_logger
 from redis.exceptions import LockError
 
-from safe_locking_service.locking_events.indexers.safe_locking_events_indexer import (
-    get_safe_locking_event_indexer,
-)
-from safe_locking_service.locking_events.services.reorg_service import (
-    ReorgService,
-    get_reorg_service,
-)
-from safe_locking_service.locking_events.utils import (
-    LOCK_TIMEOUT,
-    SOFT_TIMEOUT,
-    only_one_running_task,
-)
+from .indexers.safe_locking_events_indexer import get_safe_locking_event_indexer
+from .services.reorg_service import ReorgService, get_reorg_service
+from .utils import LOCK_TIMEOUT, SOFT_TIMEOUT, only_one_running_task
 
 logger = get_task_logger(__name__)
 
