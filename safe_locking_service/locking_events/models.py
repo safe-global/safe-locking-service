@@ -22,7 +22,7 @@ class EthereumTxManager(models.Manager):
 class EthereumTxQuerySet(models.QuerySet):
     def not_confirmed(self):
         """
-        :param to_block_number:
+
         :return: Block not confirmed
         """
         queryset = self.filter(confirmed=False)
@@ -45,6 +45,7 @@ class EthereumTx(models.Model):
 
     class Meta:
         indexes = [
+            # Index to quick search sorted not confirmed blocks
             Index(
                 name="Not_confirmed_block_idx",
                 fields=["block_number"],

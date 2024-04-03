@@ -84,7 +84,7 @@ class ReorgService:
         """
         unconfirmed_blocks = (
             EthereumTx.objects.not_confirmed()
-            .only("block_number", "block_hash", "confirmed")
+            .only("block_number", "block_hash")
             .order_by("block_number")
         )
         if not unconfirmed_blocks:
