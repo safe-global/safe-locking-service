@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Index
+from django.db.models import Index, Q
 
 from web3.types import EventData
 
@@ -11,11 +11,47 @@ from gnosis.eth.django.models import (
 )
 
 
+class EthereumTxManager(models.Manager):
+    """
+    It is necessary to configure EthereumTxQuerySet
+    """
+
+    pass
+
+
+class EthereumTxQuerySet(models.QuerySet):
+    def not_confirmed(self):
+        """
+
+        :return: Block not confirmed
+        """
+        queryset = self.filter(confirmed=False)
+        return queryset
+
+    def since_block(self, block_number: int):
+        return self.filter(block_number__gte=block_number)
+
+    def until_block(self, block_number: int):
+        return self.filter(block_number__lte=block_number)
+
+
 class EthereumTx(models.Model):
+    objects = EthereumTxManager.from_queryset(EthereumTxQuerySet)()
     tx_hash = Keccak256Field(primary_key=True)
     block_hash = Keccak256Field()
     block_number = Uint32Field()
     block_timestamp = models.DateTimeField()
+    confirmed = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            # Index to quick search sorted not confirmed blocks
+            Index(
+                name="Not_confirmed_block_idx",
+                fields=["block_number"],
+                condition=Q(confirmed=False),
+            ),
+        ]
 
     def __str__(self):
         return f"Transaction hash {self.tx_hash}"

@@ -55,8 +55,8 @@ class AllEventsView(ListAPIView):
         queryset = self.get_queryset(safe)
         page_queryset = self.paginate_queryset(queryset)
         serialized_data = serialize_all_events(page_queryset)
-
-        return self.get_paginated_response(serialized_data)
+        response = self.get_paginated_response(serialized_data)
+        return response
 
     def get(self, request, address, format=None):
         if not fast_is_checksum_address(address):

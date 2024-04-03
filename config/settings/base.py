@@ -242,7 +242,7 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {}
 CELERY_ROUTES = (
     [
         (
-            "safe_locking_service.locking_events.tasks.index_locking_events_task",
+            "safe_locking_service.locking_events.tasks.*",
             {"queue": "events"},
         ),
     ],
@@ -394,6 +394,10 @@ INDEXER_ENABLE_AUTO_BLOCK_PROCESS_LIMIT = env.bool(
 INDEXER_BLOCKS_BEHIND = env.int(
     "INDEXER_BLOCKS_BEHIND", default=0
 )  # Number of blocks behind last block to avoid a reorg.
+
+INDEXER_REORG_BLOCKS = env.int("INDEXER_REORG_BLOCKS", default=10)
+
+INDEXER_BLOCK_REORG_BATCH = env.int("INDEXER_BLOCK_REORG_BATCH", default=100)
 
 # Shell Plus
 # ------------------------------------------------------------------------------

@@ -21,6 +21,7 @@ class EthereumTxFactory(DjangoModelFactory):
     block_hash = Sequence(lambda n: Web3.keccak(text=f"tx_hash-{n}").hex())
     block_number = Sequence(lambda n: n + 1)
     block_timestamp = LazyFunction(timezone.now)
+    confirmed = False
 
 
 class LockEventFactory(DjangoModelFactory):
