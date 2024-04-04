@@ -13,4 +13,7 @@ urlpatterns = [
         views.LeaderBoardPositionView.as_view(),
         name="leaderboard",
     ),
+    path(
+        "lock-events/<str:address>/", views.LockEventsView.as_view(), name="lock-events"
+    ),
 ]

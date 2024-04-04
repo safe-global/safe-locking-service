@@ -10,6 +10,7 @@ from safe_locking_service.locking_events.models import (
     WithdrawnEvent,
 )
 
+from .factories import LockEventFactory
 from .utils import add_sorted_events
 
 
@@ -191,3 +192,45 @@ class TestViews(TestCase):
                 "withdrawnAmount": str(500),
             },
         )
+
+    def test_lock_events_view(self):
+        not_checksumed_address = "0x15fc97934bd2d140cd1ccbf7B164dec7ff64e667"
+        response = self.client.get(
+            reverse("v1:locking_events:lock-events", args=(not_checksumed_address,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        address = Account.create().address
+        response = self.client.get(
+            reverse("v1:locking_events:lock-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(response.data["count"], 0)
+        LockEventFactory(holder=address, amount=100)
+        response = self.client.get(
+            reverse("v1:locking_events:lock-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.json()["results"]
+        self.assertEqual(len(results), 1)
+        lock_response_result = results[0]
+        lock_expected = LockEvent.objects.last()
+        self.assertCountEqual(
+            lock_response_result,
+            {
+                "executionDate": lock_expected.get_serialized_timestamp(),
+                "transactionHash": lock_expected.ethereum_tx_id,
+                "holder": lock_expected.holder,
+                "amount": lock_expected.amount,
+                "logIndex": lock_expected.log_index,
+            },
+        )
+        LockEventFactory(holder=address, amount=100)
+        response = self.client.get(
+            reverse("v1:locking_events:lock-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.json()["results"]
+        self.assertEqual(len(results), 2)
