@@ -17,7 +17,7 @@ from safe_locking_service.locking_events.services.locking_service import EventTy
 class EventTypeSerializer(serializers.Serializer):
     event_type = serializers.SerializerMethodField()
 
-    def get_event_type(self, obj: CommonEvent):
+    def get_event_type(self, obj: CommonEvent) -> str:
         return EventType(obj.event_type).name
 
 
@@ -55,7 +55,7 @@ class UnlockOrWithdrawnEventWithTypeSerializer(
 
 class AllEventsDocSerializer(serializers.Serializer):
     """
-    Just for the purpose of documenting, don't use it
+    Just for the purpose of documenting endpoints, not intended for using
     """
 
     lock_event = LockEventWithTypeSerializer()
