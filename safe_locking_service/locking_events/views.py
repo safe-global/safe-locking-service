@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from gnosis.eth.utils import fast_is_checksum_address
 
 from safe_locking_service import __version__
+from safe_locking_service.locking_events.models import LockEvent
 from safe_locking_service.locking_events.pagination import (
     CustomListPagination,
     SmallPagination,
@@ -15,6 +16,7 @@ from safe_locking_service.locking_events.pagination import (
 from safe_locking_service.locking_events.serializers import (
     AllEventsDocSerializer,
     LeaderBoardSerializer,
+    LockEventSerializer,
     serialize_all_events,
 )
 from safe_locking_service.locking_events.services.locking_service import LockingService
@@ -124,3 +126,30 @@ class LeaderBoardPositionView(RetrieveAPIView):
 
         serializer = LeaderBoardSerializer(queryset)
         return Response(status=status.HTTP_200_OK, data=serializer.data)
+
+
+class LockEventsView(ListAPIView):
+    """
+    Returns a paginated list of last lock events executed by the provided address.
+    """
+
+    pagination_class = SmallPagination
+    serializer_class = LockEventSerializer
+
+    def get_queryset(self):
+        holder = self.kwargs["address"]
+        return LockEvent.objects.filter(holder=holder)
+
+    def get(self, request, address, format=None):
+        address = self.kwargs["address"]
+        if not fast_is_checksum_address(address):
+            return Response(
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                data={
+                    "code": 1,
+                    "message": "Checksum address validation failed",
+                    "arguments": [address],
+                },
+            )
+
+        return super().get(request, address)

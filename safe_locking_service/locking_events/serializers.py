@@ -14,16 +14,19 @@ from safe_locking_service.locking_events.models import (
 from safe_locking_service.locking_events.services.locking_service import EventType
 
 
-class CommonEventSerializer(serializers.Serializer):
+class EventTypeSerializer(serializers.Serializer):
     event_type = serializers.SerializerMethodField()
+
+    def get_event_type(self, obj: CommonEvent) -> str:
+        return EventType(obj.event_type).name
+
+
+class CommonEventSerializer(serializers.Serializer):
     execution_date = serializers.SerializerMethodField()
     transaction_hash = serializers.SerializerMethodField()
     holder = EthereumAddressField()
     amount = Uint96Field()
     log_index = Uint32Field()
-
-    def get_event_type(self, obj: CommonEvent):
-        return EventType(obj.event_type).name
 
     def get_execution_date(self, obj: CommonEvent):
         return obj.timestamp
@@ -36,18 +39,28 @@ class LockEventSerializer(CommonEventSerializer):
     pass
 
 
-class UnlockOrWitdrawnEventSerializer(CommonEventSerializer):
+class LockEventWithTypeSerializer(CommonEventSerializer, EventTypeSerializer):
+    pass
+
+
+class UnlockOrWithdrawnEventSerializer(CommonEventSerializer):
     unlock_index = Uint32Field()
+
+
+class UnlockOrWithdrawnEventWithTypeSerializer(
+    UnlockOrWithdrawnEventSerializer, EventTypeSerializer
+):
+    pass
 
 
 class AllEventsDocSerializer(serializers.Serializer):
     """
-    Just for the purpose of documenting, don't use it
+    Just for the purpose of documenting endpoints, not intended for using
     """
 
-    lock_event = LockEventSerializer()
-    unlock_event = UnlockOrWitdrawnEventSerializer()
-    withdrawn_event = UnlockOrWitdrawnEventSerializer()
+    lock_event = LockEventWithTypeSerializer()
+    unlock_event = UnlockOrWithdrawnEventWithTypeSerializer()
+    withdrawn_event = UnlockOrWithdrawnEventWithTypeSerializer()
 
 
 def serialize_all_events(
@@ -63,12 +76,12 @@ def serialize_all_events(
     for model in queryset:
         model_type = model.event_type
         if model_type == EventType.LOCKED.value:
-            serializer = LockEventSerializer
+            serializer = LockEventWithTypeSerializer
         elif (
             model_type == EventType.UNLOCKED.value
             or model_type == EventType.WITHDRAWN.value
         ):
-            serializer = UnlockOrWitdrawnEventSerializer
+            serializer = UnlockOrWithdrawnEventWithTypeSerializer
         else:
             raise ValueError(f"Type={model_type} not expected, cannot serialize")
 
