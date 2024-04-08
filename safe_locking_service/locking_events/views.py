@@ -138,7 +138,7 @@ class LockEventsView(ListAPIView):
 
     def get_queryset(self):
         holder = self.kwargs["address"]
-        return LockEvent.objects.filter(holder=holder)
+        return LockEvent.objects.filter(holder=holder).order_by("-timestamp")
 
     def get(self, request, address, format=None):
         address = self.kwargs["address"]
