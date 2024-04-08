@@ -16,4 +16,9 @@ urlpatterns = [
     path(
         "lock-events/<str:address>/", views.LockEventsView.as_view(), name="lock-events"
     ),
+    path(
+        "unlock-events/<str:address>/",
+        views.UnlockEventsView.as_view(),
+        name="unlock-events",
+    ),
 ]
