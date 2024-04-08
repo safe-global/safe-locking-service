@@ -227,10 +227,13 @@ class TestViews(TestCase):
                 "logIndex": lock_expected.log_index,
             },
         )
-        LockEventFactory(holder=address, amount=100)
+        new_lock_event = LockEventFactory(holder=address, amount=100)
         response = self.client.get(
             reverse("v1:locking_events:lock-events", args=(address,)), format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.json()["results"]
         self.assertEqual(len(results), 2)
+        # Should be returned ordered by -timestamp
+        self.assertEqual(results[0]["transactionHash"], new_lock_event.ethereum_tx_id)
+        self.assertEqual(results[1]["transactionHash"], lock_expected.ethereum_tx_id)
