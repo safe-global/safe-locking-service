@@ -10,7 +10,7 @@ from safe_locking_service.locking_events.models import (
     WithdrawnEvent,
 )
 
-from .factories import LockEventFactory
+from .factories import LockEventFactory, UnlockEventFactory
 from .utils import add_sorted_events
 
 
@@ -237,3 +237,49 @@ class TestViews(TestCase):
         # Should be returned ordered by -timestamp
         self.assertEqual(results[0]["transactionHash"], new_lock_event.ethereum_tx_id)
         self.assertEqual(results[1]["transactionHash"], lock_expected.ethereum_tx_id)
+
+    def test_unlock_events_view(self):
+        not_checksumed_address = "0x15fc97934bd2d140cd1ccbf7B164dec7ff64e667"
+        response = self.client.get(
+            reverse("v1:locking_events:unlock-events", args=(not_checksumed_address,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        address = Account.create().address
+        response = self.client.get(
+            reverse("v1:locking_events:unlock-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(response.data["count"], 0)
+        UnlockEventFactory(holder=address, amount=100)
+        response = self.client.get(
+            reverse("v1:locking_events:unlock-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.json()["results"]
+        self.assertEqual(len(results), 1)
+        unlock_response_result = results[0]
+        unlock_expected = UnlockEvent.objects.last()
+        self.assertCountEqual(
+            unlock_response_result,
+            {
+                "executionDate": unlock_expected.get_serialized_timestamp(),
+                "transactionHash": unlock_expected.ethereum_tx_id,
+                "holder": unlock_expected.holder,
+                "amount": unlock_expected.amount,
+                "logIndex": unlock_expected.log_index,
+                "unlockIndex": unlock_expected.unlock_index,
+            },
+        )
+        new_unlock_event = UnlockEventFactory(holder=address, amount=100)
+        response = self.client.get(
+            reverse("v1:locking_events:unlock-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.json()["results"]
+        self.assertEqual(len(results), 2)
+        # Should be returned ordered by -timestamp
+        self.assertEqual(results[0]["transactionHash"], new_unlock_event.ethereum_tx_id)
+        self.assertEqual(results[1]["transactionHash"], unlock_expected.ethereum_tx_id)
