@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import Union
 
 from django.contrib import admin
@@ -18,8 +19,12 @@ from safe_locking_service.locking_events.models import (
 
 
 class TxHashEtherscanMixin:
+    @abstractmethod
+    def get_tx_hash(self, obj):
+        pass
+
     def tx_hash_etherscan_link(
-        self, obj: Union[LockEvent, UnlockEvent, WithdrawnEvent]
+        self, obj: Union[EthereumTx, LockEvent, UnlockEvent, WithdrawnEvent]
     ) -> SafeString:
         """
         Return the etherscan link by transaction hash
@@ -30,15 +35,11 @@ class TxHashEtherscanMixin:
         ethereum_client = EthereumClientProvider()
         etherscan = EtherscanClient(EthereumNetwork(ethereum_client.get_chain_id()))
 
-        if isinstance(obj, EthereumTx):
-            tx_hash = obj.tx_hash
-        else:
-            tx_hash = obj.ethereum_tx_id
         return format_html(
             '<a href="{}/tx/{}">{}</a>',
             etherscan.base_url,
-            tx_hash,
-            tx_hash,
+            self.get_tx_hash(obj),
+            self.get_tx_hash(obj),
         )
 
     tx_hash_etherscan_link.short_description = "Tx hash etherscan link"
@@ -58,6 +59,9 @@ class EthereumTxAdmin(AdvancedAdminSearchMixin, admin.ModelAdmin, TxHashEthersca
     list_filter = ("confirmed",)
     search_fields = ["==tx_hash"]
 
+    def get_tx_hash(self, obj: EthereumTx):
+        return obj.tx_hash
+
 
 @admin.register(LockEvent, UnlockEvent, WithdrawnEvent)
 class CommonEventAdmin(
@@ -71,3 +75,6 @@ class CommonEventAdmin(
     )
     ordering = ["-timestamp"]
     search_fields = ["==ethereum_tx_id", "==holder"]
+
+    def get_tx_hash(self, obj: Union[LockEvent, UnlockEvent, WithdrawnEvent]):
+        return obj.ethereum_tx_id
