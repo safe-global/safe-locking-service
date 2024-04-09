@@ -17,32 +17,7 @@ from safe_locking_service.locking_events.models import (
 )
 
 
-@admin.register(EthereumTx)
-class EthereumTxAdmin(AdvancedAdminSearchMixin, admin.ModelAdmin):
-    list_display = (
-        "block_timestamp",
-        "tx_hash",
-        "block_number",
-        "block_hash",
-        "confirmed",
-    )
-    ordering = ["-block_timestamp"]
-    list_filter = ("confirmed",)
-    search_fields = ["==tx_hash"]
-
-
-@admin.register(LockEvent, UnlockEvent, WithdrawnEvent)
-class CommonEventAdmin(AdvancedAdminSearchMixin, admin.ModelAdmin):
-    list_display = (
-        "timestamp",
-        "ethereum_tx_id",
-        "tx_hash_etherscan_link",
-        "holder",
-        "amount",
-    )
-    ordering = ["-timestamp"]
-    search_fields = ["==ethereum_tx_id", "==holder"]
-
+class TxHashEtherscanMixin:
     def tx_hash_etherscan_link(
         self, obj: Union[LockEvent, UnlockEvent, WithdrawnEvent]
     ) -> SafeString:
@@ -54,12 +29,45 @@ class CommonEventAdmin(AdvancedAdminSearchMixin, admin.ModelAdmin):
         """
         ethereum_client = EthereumClientProvider()
         etherscan = EtherscanClient(EthereumNetwork(ethereum_client.get_chain_id()))
+
+        if isinstance(obj, EthereumTx):
+            tx_hash = obj.tx_hash
+        else:
+            tx_hash = obj.ethereum_tx_id
         return format_html(
             '<a href="{}/tx/{}">{}</a>',
             etherscan.base_url,
-            obj.ethereum_tx_id,
-            obj.ethereum_tx_id,
+            tx_hash,
+            tx_hash,
         )
 
-    tx_hash_etherscan_link.short_description = "Etherscan link"
+    tx_hash_etherscan_link.short_description = "Tx hash etherscan link"
     tx_hash_etherscan_link.allow_tags = True
+
+
+@admin.register(EthereumTx)
+class EthereumTxAdmin(AdvancedAdminSearchMixin, admin.ModelAdmin, TxHashEtherscanMixin):
+    list_display = (
+        "block_timestamp",
+        "tx_hash_etherscan_link",
+        "block_number",
+        "block_hash",
+        "confirmed",
+    )
+    ordering = ["-block_timestamp"]
+    list_filter = ("confirmed",)
+    search_fields = ["==tx_hash"]
+
+
+@admin.register(LockEvent, UnlockEvent, WithdrawnEvent)
+class CommonEventAdmin(
+    AdvancedAdminSearchMixin, admin.ModelAdmin, TxHashEtherscanMixin
+):
+    list_display = (
+        "timestamp",
+        "tx_hash_etherscan_link",
+        "holder",
+        "amount",
+    )
+    ordering = ["-timestamp"]
+    search_fields = ["==ethereum_tx_id", "==holder"]
