@@ -36,18 +36,18 @@ class CommonEventAdmin(AdvancedAdminSearchMixin, admin.ModelAdmin):
     list_display = (
         "timestamp",
         "ethereum_tx_id",
-        "tx_etherscan_link",
+        "tx_hash_etherscan_link",
         "holder",
         "amount",
     )
     ordering = ["-timestamp"]
     search_fields = ["==ethereum_tx_id", "==holder"]
 
-    def tx_etherscan_link(
+    def tx_hash_etherscan_link(
         self, obj: Union[LockEvent, UnlockEvent, WithdrawnEvent]
     ) -> SafeString:
         """
-        Return the ether scan link by transaction hash
+        Return the etherscan link by transaction hash
 
         :param obj:
         :return:
@@ -61,5 +61,5 @@ class CommonEventAdmin(AdvancedAdminSearchMixin, admin.ModelAdmin):
             obj.ethereum_tx_id,
         )
 
-    tx_etherscan_link.short_description = "Etherscan link"
-    tx_etherscan_link.allow_tags = True
+    tx_hash_etherscan_link.short_description = "Etherscan link"
+    tx_hash_etherscan_link.allow_tags = True
