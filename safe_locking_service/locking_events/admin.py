@@ -27,7 +27,7 @@ class TxHashEtherscanMixin:
         self, obj: Union[EthereumTx, LockEvent, UnlockEvent, WithdrawnEvent]
     ) -> SafeString:
         """
-        Return the etherscan link by transaction hash
+        Return the etherscan link for every transaction hash
 
         :param obj:
         :return:
