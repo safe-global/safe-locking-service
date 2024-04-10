@@ -141,7 +141,7 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
         self.assertEqual(EthereumTx.objects.count(), 0)
         self.assertEqual(UnlockEvent.objects.count(), 0)
         locking_contract_lock(
-            self.ethereum_client.w3, account, self.locking_contract, 100
+            self.ethereum_client.w3, account, self.locking_contract, lock_amount
         )
         for i in range(0, 10):
             locking_contract_unlock(
