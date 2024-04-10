@@ -2,7 +2,7 @@ from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 from web3.types import LogReceipt
 
-invalid_key_event_mock: LogReceipt = AttributeDict(
+invalid_topic_event_mock: LogReceipt = AttributeDict(
     {
         "address": "0x286A5d99174B45A182C28227760494bb730F7996",
         "blockHash": HexBytes(
@@ -16,7 +16,7 @@ invalid_key_event_mock: LogReceipt = AttributeDict(
         "removed": False,
         "topics": [
             HexBytes(
-                "0xe87ef84d870121e49051dda6f8d297713cb00a0c072f0d771f78ea368815009f"
+                "0xe87ef84d870121e4ffffffffffffffff3cb00a0c072f0d771f78ea368815009f"
             ),
             HexBytes(
                 "0x00000000000000000000000022d491bde2303f2f43325b2108d26f1eaba1e32a"

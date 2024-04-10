@@ -18,8 +18,8 @@ from ..models import (
     WithdrawnEvent,
 )
 from .mocks.mocks_locking_events_indexer import (
-    invalid_key_event_mock,
     invalid_lock_event_mock,
+    invalid_topic_event_mock,
     invalid_unlock_event_mock,
     invalid_withdrawn_event_mock,
     valid_lock_event_mock,
@@ -173,7 +173,7 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
         locking_events_indexer = SafeLockingEventsIndexer(self.locking_contract_address)
 
         self.assertRaises(
-            KeyError, locking_events_indexer.decode_event, invalid_key_event_mock
+            KeyError, locking_events_indexer.decode_event, invalid_topic_event_mock
         )
 
         data_lock_event = locking_events_indexer.decode_event(valid_lock_event_mock)
