@@ -36,9 +36,8 @@ from .utils import (
 
 
 class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
-    cooldown_period = 2
-
     def setUp(self) -> None:
+        self.cooldown_period = 2
         account = self.ethereum_test_account
         amount = 10000000
         self.erc20_contract = self.deploy_example_erc20(amount, account.address)
