@@ -153,7 +153,7 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
             self.ethereum_client.w3, account, self.locking_contract, 5
         )
         locking_events_indexer.index_until_last_chain_block()
-        # 1 Lock, 10 Unlock and 1 Withdrawn
+        # 1 Lock, 10 Unlock and 1 Withdraw
         self.assertEqual(EthereumTx.objects.count(), 12)
         self.assertEqual(LockEvent.objects.filter(holder=account.address).count(), 1)
         self.assertEqual(UnlockEvent.objects.filter(holder=account.address).count(), 10)
