@@ -2,7 +2,7 @@ from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 from web3.types import LogReceipt
 
-invalid_key_event: LogReceipt = AttributeDict(
+invalid_key_event_mock: LogReceipt = AttributeDict(
     {
         "address": "0x286A5d99174B45A182C28227760494bb730F7996",
         "blockHash": HexBytes(
@@ -29,7 +29,7 @@ invalid_key_event: LogReceipt = AttributeDict(
     }
 )
 
-valid_lock_event: LogReceipt = AttributeDict(
+valid_lock_event_mock: LogReceipt = AttributeDict(
     {
         "address": "0x286A5d99174B45A182C28227760494bb730F7996",
         "blockHash": HexBytes(
@@ -56,7 +56,7 @@ valid_lock_event: LogReceipt = AttributeDict(
     }
 )
 
-invalid_lock_event: LogReceipt = AttributeDict(
+invalid_lock_event_mock: LogReceipt = AttributeDict(
     {
         "address": "0x286A5d99174B45A182C28227760494bb730F7996",
         "blockHash": HexBytes(
@@ -79,7 +79,7 @@ invalid_lock_event: LogReceipt = AttributeDict(
     }
 )
 
-valid_unlock_event: LogReceipt = AttributeDict(
+valid_unlock_event_mock: LogReceipt = AttributeDict(
     {
         "address": "0x286A5d99174B45A182C28227760494bb730F7996",
         "blockHash": HexBytes(
@@ -109,7 +109,7 @@ valid_unlock_event: LogReceipt = AttributeDict(
     }
 )
 
-invalid_unlock_event: LogReceipt = AttributeDict(
+invalid_unlock_event_mock: LogReceipt = AttributeDict(
     {
         "address": "0x286A5d99174B45A182C28227760494bb730F7996",
         "blockHash": HexBytes(
@@ -133,7 +133,7 @@ invalid_unlock_event: LogReceipt = AttributeDict(
     }
 )
 
-valid_withdrawn_event: LogReceipt = AttributeDict(
+valid_withdrawn_event_mock: LogReceipt = AttributeDict(
     {
         "address": "0x286A5d99174B45A182C28227760494bb730F7996",
         "blockHash": HexBytes(
@@ -163,7 +163,7 @@ valid_withdrawn_event: LogReceipt = AttributeDict(
     }
 )
 
-invalid_withdrawn_event: LogReceipt = AttributeDict(
+invalid_withdrawn_event_mock: LogReceipt = AttributeDict(
     {
         "address": "0x286A5d99174B45A182C28227760494bb730F7996",
         "blockHash": HexBytes(
