@@ -10,7 +10,7 @@ from safe_locking_service.locking_events.models import (
     WithdrawnEvent,
 )
 
-from .factories import LockEventFactory, UnlockEventFactory
+from .factories import LockEventFactory, UnlockEventFactory, WithdrawnEventFactory
 from .utils import add_sorted_events
 
 
@@ -283,3 +283,55 @@ class TestViews(TestCase):
         # Should be returned ordered by -timestamp
         self.assertEqual(results[0]["transactionHash"], new_unlock_event.ethereum_tx_id)
         self.assertEqual(results[1]["transactionHash"], unlock_expected.ethereum_tx_id)
+
+    def test_withdraw_events_view(self):
+        not_checksumed_address = "0x15fc97934bd2d140cd1ccbf7B164dec7ff64e667"
+        response = self.client.get(
+            reverse(
+                "v1:locking_events:withdraw-events", args=(not_checksumed_address,)
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        address = Account.create().address
+        response = self.client.get(
+            reverse("v1:locking_events:withdraw-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(response.data["count"], 0)
+        WithdrawnEventFactory(holder=address, amount=100)
+        response = self.client.get(
+            reverse("v1:locking_events:withdraw-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.json()["results"]
+        self.assertEqual(len(results), 1)
+        withdraw_response_result = results[0]
+        withdraw_expected = WithdrawnEvent.objects.last()
+        self.assertCountEqual(
+            withdraw_response_result,
+            {
+                "executionDate": withdraw_expected.get_serialized_timestamp(),
+                "transactionHash": withdraw_expected.ethereum_tx_id,
+                "holder": withdraw_expected.holder,
+                "amount": withdraw_expected.amount,
+                "logIndex": withdraw_expected.log_index,
+                "unlockIndex": withdraw_expected.unlock_index,
+            },
+        )
+        new_withdraw_event = WithdrawnEventFactory(holder=address, amount=100)
+        response = self.client.get(
+            reverse("v1:locking_events:withdraw-events", args=(address,)), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.json()["results"]
+        self.assertEqual(len(results), 2)
+        # Should be returned ordered by -timestamp
+        self.assertEqual(
+            results[0]["transactionHash"], new_withdraw_event.ethereum_tx_id
+        )
+        self.assertEqual(
+            results[1]["transactionHash"], withdraw_expected.ethereum_tx_id
+        )

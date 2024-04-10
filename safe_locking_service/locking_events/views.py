@@ -8,7 +8,11 @@ from rest_framework.response import Response
 from gnosis.eth.utils import fast_is_checksum_address
 
 from safe_locking_service import __version__
-from safe_locking_service.locking_events.models import LockEvent, UnlockEvent
+from safe_locking_service.locking_events.models import (
+    LockEvent,
+    UnlockEvent,
+    WithdrawnEvent,
+)
 from safe_locking_service.locking_events.pagination import (
     CustomListPagination,
     SmallPagination,
@@ -167,6 +171,33 @@ class UnlockEventsView(ListAPIView):
     def get_queryset(self):
         holder = self.kwargs["address"]
         return UnlockEvent.objects.filter(holder=holder).order_by("-timestamp")
+
+    def get(self, request, address, format=None):
+        address = self.kwargs["address"]
+        if not fast_is_checksum_address(address):
+            return Response(
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                data={
+                    "code": 1,
+                    "message": "Checksum address validation failed",
+                    "arguments": [address],
+                },
+            )
+
+        return super().get(request, address)
+
+
+class WithdrawEventsView(ListAPIView):
+    """
+    Returns a paginated list of last withdrawn events executed by the provided address.
+    """
+
+    pagination_class = SmallPagination
+    serializer_class = UnlockOrWithdrawnEventSerializer
+
+    def get_queryset(self):
+        holder = self.kwargs["address"]
+        return WithdrawnEvent.objects.filter(holder=holder).order_by("-timestamp")
 
     def get(self, request, address, format=None):
         address = self.kwargs["address"]

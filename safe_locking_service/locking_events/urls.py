@@ -21,4 +21,9 @@ urlpatterns = [
         views.UnlockEventsView.as_view(),
         name="unlock-events",
     ),
+    path(
+        "withdraw-events/<str:address>/",
+        views.WithdrawEventsView.as_view(),
+        name="withdraw-events",
+    ),
 ]
