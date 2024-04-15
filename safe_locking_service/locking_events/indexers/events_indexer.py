@@ -227,13 +227,21 @@ class EventsContractIndexer(BaseIndexer):
         """
         pass
 
-    def index_until_last_chain_block(self):
+    def index_until_last_chain_block(
+        self,
+        from_block_number: Optional[int] = None,
+        update_last_indexed_block: Optional[bool] = True,
+    ):
         """
         Run the indexer from the last indexed block until current last generated block on chain.
         Updates the last indexed block in database.
         """
         last_current_block = self.get_current_last_block()
-        from_block = self.get_from_block_number(self.contract_address)
+        from_block = (
+            from_block_number
+            if from_block_number
+            else self.get_from_block_number(self.contract_address)
+        )
         logger.info(
             "%s: Starting indexing for pending-blocks=%d",
             self.__class__.__name__,
@@ -270,8 +278,9 @@ class EventsContractIndexer(BaseIndexer):
                 self.set_processed_events(unprocessed_events)
             # Update from block
             from_block = to_block
-            # Update last block indexed
-            self.set_last_indexed_block(self.contract_address, from_block)
+            if update_last_indexed_block:
+                # Update last block indexed
+                self.set_last_indexed_block(self.contract_address, from_block)
 
         logger.info(
             "%s: Finalizing indexing cycle with pending-blocks=%d",
