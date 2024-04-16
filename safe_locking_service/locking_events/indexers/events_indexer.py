@@ -233,8 +233,8 @@ class EventsContractIndexer(BaseIndexer):
         update_last_indexed_block: Optional[bool] = True,
     ):
         """
-        Run the indexer from the last indexed block until current last generated block on chain.
-        Updates the last indexed block in database.
+        Run the indexer from the last indexed block or from a provided block_number until last block on chain.
+        If update_last_indexed_block is True, updates the last indexed block in database.
 
         :param from_block_number:
         :param update_last_indexed_block:
