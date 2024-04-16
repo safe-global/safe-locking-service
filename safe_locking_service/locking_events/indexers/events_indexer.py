@@ -235,12 +235,16 @@ class EventsContractIndexer(BaseIndexer):
         """
         Run the indexer from the last indexed block until current last generated block on chain.
         Updates the last indexed block in database.
+
+        :param from_block_number:
+        :param update_last_indexed_block:
+        :return:
         """
         last_current_block = self.get_current_last_block()
         from_block = (
-            from_block_number
-            if from_block_number
-            else self.get_from_block_number(self.contract_address)
+            self.get_from_block_number(self.contract_address)
+            if from_block_number is None
+            else from_block_number
         )
         logger.info(
             "%s: Starting indexing for pending-blocks=%d",

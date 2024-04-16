@@ -6,6 +6,7 @@ from hexbytes import HexBytes
 from gnosis.eth.tests.ethereum_test_case import EthereumTestCaseMixin
 
 from ..contracts.locking_contract import deploy_locking_contract
+from ..indexers.events_indexer import logger as events_logger
 from ..indexers.safe_locking_events_indexer import (
     SafeLockingEventsIndexer,
     get_safe_locking_event_indexer,
@@ -284,3 +285,53 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
             processed_keys_all_events, list(processed_element_cache.keys())
         )
         self.assertEqual(len(processed_element_cache.keys()), 2)
+
+    def test_index_until_last_chain_block(self):
+        account = self.ethereum_test_account
+        lock_amount = 200
+        erc20_approve(
+            self.ethereum_client.w3,
+            account,
+            self.erc20_contract,
+            self.locking_contract.address,
+            lock_amount,
+        )
+        locking_events_indexer = SafeLockingEventsIndexer(self.locking_contract_address)
+        locking_events_indexer.index_until_last_chain_block()
+        self.assertEqual(EthereumTx.objects.count(), 0)
+        last_indexed_block = StatusEventsIndexer.objects.last().last_indexed_block
+        locking_contract_lock(
+            self.ethereum_client.w3, account, self.locking_contract, 100
+        )
+        # Don't set the last indexed block
+        with self.assertLogs(logger=events_logger) as cm:
+            locking_events_indexer.index_until_last_chain_block(
+                update_last_indexed_block=False
+            )
+            self.assertIn(
+                f"Indexing from-block-number={last_indexed_block}",
+                cm.output[1],
+            )
+            self.assertEqual(
+                StatusEventsIndexer.objects.last().last_indexed_block,
+                last_indexed_block,
+            )
+            self.assertEqual(EthereumTx.objects.count(), 1)
+
+        locking_contract_lock(
+            self.ethereum_client.w3, account, self.locking_contract, 100
+        )
+        # Set the last indexed block
+        locking_events_indexer.index_until_last_chain_block()
+        # last indexed block will be previous last indexed block + 2 blocks related with the 2 last events
+        self.assertEqual(
+            StatusEventsIndexer.objects.last().last_indexed_block,
+            last_indexed_block + 2,
+        )
+
+        with self.assertLogs(logger=events_logger) as cm:
+            locking_events_indexer.index_until_last_chain_block(from_block_number=0)
+            self.assertIn(
+                "Indexing from-block-number=0",
+                cm.output[1],
+            )
