@@ -288,7 +288,7 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
 
     def test_index_until_last_chain_block(self):
         account = self.ethereum_test_account
-        lock_amount = 200
+        lock_amount = 300
         erc20_approve(
             self.ethereum_client.w3,
             account,
@@ -300,10 +300,11 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
         locking_events_indexer.index_until_last_chain_block()
         self.assertEqual(EthereumTx.objects.count(), 0)
         last_indexed_block = StatusEventsIndexer.objects.last().last_indexed_block
+
+        # Should not store in database the last indexed block
         locking_contract_lock(
             self.ethereum_client.w3, account, self.locking_contract, 100
         )
-        # Don't set the last indexed block
         with self.assertLogs(logger=events_logger) as cm:
             locking_events_indexer.index_until_last_chain_block(
                 update_last_indexed_block=False
@@ -318,20 +319,26 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
             )
             self.assertEqual(EthereumTx.objects.count(), 1)
 
+        # Should update last indexed block
         locking_contract_lock(
             self.ethereum_client.w3, account, self.locking_contract, 100
         )
-        # Set the last indexed block
         locking_events_indexer.index_until_last_chain_block()
-        # last indexed block will be previous last indexed block + 2 blocks related with the 2 last events
+        # Last indexed block will be equals to previous last indexed block + 2 blocks related with the 2 last events
         self.assertEqual(
             StatusEventsIndexer.objects.last().last_indexed_block,
             last_indexed_block + 2,
         )
+        self.assertEqual(EthereumTx.objects.count(), 2)
 
+        # Should start from provided from_block_number
+        locking_contract_lock(
+            self.ethereum_client.w3, account, self.locking_contract, 100
+        )
         with self.assertLogs(logger=events_logger) as cm:
             locking_events_indexer.index_until_last_chain_block(from_block_number=0)
             self.assertIn(
                 "Indexing from-block-number=0",
                 cm.output[1],
             )
+            self.assertEqual(EthereumTx.objects.count(), 3)
