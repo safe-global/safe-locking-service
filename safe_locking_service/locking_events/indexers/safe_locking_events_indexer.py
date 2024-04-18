@@ -38,10 +38,10 @@ def get_safe_locking_event_indexer():
 
 
 class SafeLockingEventsIndexer(EventsContractIndexer):
-    def __init__(self, contract_address: ChecksumAddress):
+    def __init__(self, contract_address: ChecksumAddress, *args, **kwargs):
         self.contract_address = contract_address
 
-        super().__init__(ethereum_client=EthereumClientProvider())
+        super().__init__(ethereum_client=EthereumClientProvider(), *args, **kwargs)
 
     @cached_property
     def contract_events(self) -> List[ContractEvent]:
