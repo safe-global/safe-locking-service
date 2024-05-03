@@ -38,14 +38,6 @@ def fetch_all_from_cursor(cursor: CursorWrapper) -> List[LeaderBoardRow]:
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
-class EthereumTxManager(models.Manager):
-    """
-    It is necessary to configure EthereumTxQuerySet
-    """
-
-    pass
-
-
 class EthereumTxQuerySet(models.QuerySet):
     def not_confirmed(self):
         """
@@ -63,7 +55,7 @@ class EthereumTxQuerySet(models.QuerySet):
 
 
 class EthereumTx(models.Model):
-    objects = EthereumTxManager.from_queryset(EthereumTxQuerySet)()
+    objects = EthereumTxQuerySet.as_manager()
     tx_hash = Keccak256Field(primary_key=True)
     block_hash = Keccak256Field()
     block_number = Uint32Field()
