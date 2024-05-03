@@ -2,6 +2,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 
 from eth_account import Account
+from hexbytes import HexBytes
 
 from safe_locking_service.locking_events.models import (
     EthereumTx,
@@ -14,6 +15,9 @@ from safe_locking_service.locking_events.tests.factories import (
     UnlockEventFactory,
     WithdrawnEventFactory,
 )
+
+from ..models import LeaderBoard
+from .utils import add_sorted_events
 
 
 class TestLockingModel(TestCase):
@@ -59,3 +63,59 @@ class TestLockingModel(TestCase):
                 amount=1000,
                 unlock_index=withdrawn_event.unlock_index,
             )
+
+    def test_get_leader_board(self):
+        self.assertEqual(len(LeaderBoard.get_leader_board(limit=10, offset=0)), 0)
+        address = Account.create().address
+        add_sorted_events(address, 1000, 1000, 1000)
+        leader_board = LeaderBoard.get_leader_board(limit=10, offset=0)
+        self.assertEqual(len(leader_board), 1)
+        self.assertEqual(HexBytes(leader_board[0]["holder"].hex()), HexBytes(address))
+        self.assertEqual(leader_board[0]["position"], 1)
+        self.assertEqual(leader_board[0]["lockedAmount"], 0)
+        self.assertEqual(leader_board[0]["unlockedAmount"], 1000)
+        self.assertEqual(leader_board[0]["withdrawnAmount"], 1000)
+        address_2 = Account.create().address
+        add_sorted_events(address_2, 2000, 1000, 1000)
+        leader_board = LeaderBoard.get_leader_board(limit=10, offset=0)
+        self.assertEqual(len(leader_board), 2)
+        self.assertEqual(HexBytes(leader_board[0]["holder"].hex()), HexBytes(address_2))
+        self.assertEqual(leader_board[0]["position"], 1)
+        self.assertEqual(leader_board[0]["lockedAmount"], 1000)
+        self.assertEqual(leader_board[0]["unlockedAmount"], 1000)
+        self.assertEqual(leader_board[0]["withdrawnAmount"], 1000)
+        self.assertEqual(HexBytes(leader_board[1]["holder"].hex()), HexBytes(address))
+        self.assertEqual(leader_board[1]["position"], 2)
+        self.assertEqual(leader_board[1]["lockedAmount"], 0)
+        self.assertEqual(leader_board[1]["unlockedAmount"], 1000)
+        self.assertEqual(leader_board[1]["withdrawnAmount"], 1000)
+
+    def test_get_leader_board_position(self):
+        address = Account.create().address
+        self.assertIsNone(LeaderBoard.get_holder_position(address))
+        add_sorted_events(address, 1000, 1000, 1000)
+        leader_board = LeaderBoard.get_holder_position(address)
+        self.assertEqual(HexBytes(leader_board["holder"].hex()), HexBytes(address))
+        self.assertEqual(leader_board["position"], 1)
+        self.assertEqual(leader_board["lockedAmount"], 0)
+        self.assertEqual(leader_board["unlockedAmount"], 1000)
+        self.assertEqual(leader_board["withdrawnAmount"], 1000)
+        address_2 = Account.create().address
+        add_sorted_events(address_2, 10000, 1000, 1000)
+        leader_board = LeaderBoard.get_holder_position(address)
+        self.assertEqual(HexBytes(leader_board["holder"].hex()), HexBytes(address))
+        self.assertEqual(leader_board["position"], 2)
+        self.assertEqual(leader_board["lockedAmount"], 0)
+        self.assertEqual(leader_board["unlockedAmount"], 1000)
+        self.assertEqual(leader_board["withdrawnAmount"], 1000)
+
+    def test_get_leader_board_count(self):
+        self.assertEqual(LeaderBoard.get_count(), 0)
+        address = Account.create().address
+        add_sorted_events(address, 1000, 1000, 1000)
+        self.assertEqual(LeaderBoard.get_count(), 1)
+        add_sorted_events(address, 1000, 1000, 1000)
+        self.assertEqual(LeaderBoard.get_count(), 1)
+        address_2 = Account.create().address
+        add_sorted_events(address_2, 1000, 1000, 1000)
+        self.assertEqual(LeaderBoard.get_count(), 2)
