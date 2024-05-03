@@ -20,18 +20,16 @@ from gnosis.eth.django.models import (
 class LeaderBoardRow(TypedDict):
     position: int
     holder: ChecksumAddress
-    lockedAmount: Decimal
-    unlockedAmount: Decimal
-    withdrawnAmount: Decimal
+    locked_amount: Decimal
+    unlocked_amount: Decimal
+    withdrawn_amount: Decimal
 
 
 def fetch_all_from_cursor(cursor: CursorWrapper) -> List[LeaderBoardRow]:
     """
-    Return all rows from a cursor as a dict.
-    Assume the column names are unique.
 
     :param cursor:
-    :return: all rows from a cursor as a dict.
+    :return: all rows from a db cursor as a List of `LeaderBoardRow`.
     """
     columns = [col[0] for col in cursor.description]
 
@@ -218,7 +216,7 @@ class StatusEventsIndexer(models.Model):
 
 class LeaderBoard:
     """
-    Class to group all the database queries related with leaderboard
+    Retrieve leaderboard information from the database
     """
 
     @classmethod
