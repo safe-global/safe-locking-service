@@ -214,87 +214,79 @@ class StatusEventsIndexer(models.Model):
         return f"EventIndexer: address={self.contract} deployed_block={self.deployed_block} last_indexed_block={self.last_indexed_block} "
 
 
-class LeaderBoard:
+def get_leader_board_query() -> str:
     """
-    Retrieve leaderboard information from the database
+    Get raw leaderboard SQL query
+
+    :return:
     """
+    union_lock_unlock_withdraw_events = """
+                    (SELECT "locking_events_lockevent"."holder" AS "holder",
+                           "locking_events_lockevent"."amount" AS "amount",
+                            0 AS "event_type"
+                    FROM "locking_events_lockevent"
+                    ) UNION ALL (
+                    SELECT "locking_events_unlockevent"."holder" AS "holder",
+                           "locking_events_unlockevent"."amount" AS "amount",
+                            1 AS "event_type"
+                    FROM "locking_events_unlockevent")
+                    UNION ALL
+                    (SELECT "locking_events_withdrawnevent"."holder" AS "holder",
+                            "locking_events_withdrawnevent"."amount" AS "amount",
+                            2 AS "event_type"
+                    FROM "locking_events_withdrawnevent")
+                    """
 
-    @classmethod
-    def _get_leader_board_query(cls) -> str:
-        """
-        Get raw leaderboard SQL query
+    total_lock_unlock_withdraw_amount = f"""
+                    SELECT "holder", SUM(COALESCE(CASE WHEN "event_type" = 0 THEN "amount" ELSE NULL END,
+                            CASE WHEN "event_type" = 1 THEN -amount ELSE NULL END)) AS "lockedAmount",
+                            SUM(CASE WHEN "event_type" = 1 THEN "amount" ELSE 0 END) AS "unlockedAmount",
+                            SUM(CASE WHEN "event_type" = 2 THEN "amount" ELSE 0 END) AS "withdrawnAmount"
+                    FROM (
+                        {union_lock_unlock_withdraw_events}
+                    ) AS "UNION_TABLE"
+                    GROUP BY "holder" ORDER BY "lockedAmount" DESC
+                    """
 
-        :return:
-        """
-        union_lock_unlock_withdraw_events = """
-                        (SELECT "locking_events_lockevent"."holder" AS "holder",
-                               "locking_events_lockevent"."amount" AS "amount",
-                                0 AS "event_type"
-                        FROM "locking_events_lockevent"
-                        ) UNION ALL (
-                        SELECT "locking_events_unlockevent"."holder" AS "holder",
-                               "locking_events_unlockevent"."amount" AS "amount",
-                                1 AS "event_type"
-                        FROM "locking_events_unlockevent")
-                        UNION ALL
-                        (SELECT "locking_events_withdrawnevent"."holder" AS "holder",
-                                "locking_events_withdrawnevent"."amount" AS "amount",
-                                2 AS "event_type"
-                        FROM "locking_events_withdrawnevent")
-                        """
+    leader_board_query = f"""
+                    SELECT ROW_NUMBER() OVER () AS "position",
+                    *
+                    FROM ({total_lock_unlock_withdraw_amount}) AS RESULT_TABLE
+            """
+    return leader_board_query
 
-        total_lock_unlock_withdraw_amount = f"""
-                        SELECT "holder", SUM(COALESCE(CASE WHEN "event_type" = 0 THEN "amount" ELSE NULL END,
-                                CASE WHEN "event_type" = 1 THEN -amount ELSE NULL END)) AS "lockedAmount",
-                                SUM(CASE WHEN "event_type" = 1 THEN "amount" ELSE 0 END) AS "unlockedAmount",
-                                SUM(CASE WHEN "event_type" = 2 THEN "amount" ELSE 0 END) AS "withdrawnAmount"
-                        FROM (
-                            {union_lock_unlock_withdraw_events}
-                        ) AS "UNION_TABLE"
-                        GROUP BY "holder" ORDER BY "lockedAmount" DESC
-                        """
 
-        leader_board_query = f"""
-                        SELECT ROW_NUMBER() OVER () AS "position",
-                        *
-                        FROM ({total_lock_unlock_withdraw_amount}) AS RESULT_TABLE
-                """
-        return leader_board_query
+def get_leader_board(limit: int, offset: int) -> List[Dict]:
+    """
+    Return the leaderboard list ordered by lockedAmount
 
-    @classmethod
-    def get_leader_board(cls, limit: int, offset: int) -> List[Dict]:
-        """
-        Return the leaderboard list ordered by lockedAmount
+    :return:
+    """
+    query = f"{get_leader_board_query()} LIMIT {limit} OFFSET {offset}"
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        return fetch_all_from_cursor(cursor)
 
-        :return:
-        """
-        query = f"{cls._get_leader_board_query()} LIMIT {limit} OFFSET {offset}"
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            return fetch_all_from_cursor(cursor)
 
-    @classmethod
-    def get_holder_position(cls, holder: ChecksumAddress) -> Optional[Dict]:
-        """
-        Get a holder data and position from the leaderboard ordered by lockedAmount
+def get_leader_board_holder_position(holder: ChecksumAddress) -> Optional[Dict]:
+    """
+    Get a holder data and position from the leaderboard ordered by lockedAmount
 
-        :return:
-        """
-        query = (
-            f"SELECT * from ({cls._get_leader_board_query()}) AS TEMP WHERE holder=%s"
-        )
-        with connection.cursor() as cursor:
-            holder_address = HexBytes(holder)
-            cursor.execute(query, [holder_address])
-            if result := fetch_all_from_cursor(cursor):
-                return result[0]
+    :return:
+    """
+    query = f"SELECT * from ({get_leader_board_query()}) AS TEMP WHERE holder=%s"
+    with connection.cursor() as cursor:
+        holder_address = HexBytes(holder)
+        cursor.execute(query, [holder_address])
+        if result := fetch_all_from_cursor(cursor):
+            return result[0]
 
-    @staticmethod
-    def get_count() -> int:
-        """
-        Return the leaderboard size
 
-        :return:
-        """
-        # LeaderBoard length should be equals than the number of holders of LockEvents
-        return LockEvent.objects.values("holder").distinct().count()
+def get_leader_board_count() -> int:
+    """
+    Return the leaderboard size
+
+    :return:
+    """
+    # LeaderBoard length should be equals than the number of holders of LockEvents
+    return LockEvent.objects.values("holder").distinct().count()

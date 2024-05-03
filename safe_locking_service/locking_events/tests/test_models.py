@@ -9,6 +9,9 @@ from safe_locking_service.locking_events.models import (
     LockEvent,
     UnlockEvent,
     WithdrawnEvent,
+    get_leader_board,
+    get_leader_board_count,
+    get_leader_board_holder_position,
 )
 from safe_locking_service.locking_events.tests.factories import (
     LockEventFactory,
@@ -16,7 +19,6 @@ from safe_locking_service.locking_events.tests.factories import (
     WithdrawnEventFactory,
 )
 
-from ..models import LeaderBoard
 from .utils import add_sorted_events
 
 
@@ -65,10 +67,10 @@ class TestLockingModel(TestCase):
             )
 
     def test_get_leader_board(self):
-        self.assertEqual(len(LeaderBoard.get_leader_board(limit=10, offset=0)), 0)
+        self.assertEqual(len(get_leader_board(limit=10, offset=0)), 0)
         address = Account.create().address
         add_sorted_events(address, 1000, 1000, 1000)
-        leader_board = LeaderBoard.get_leader_board(limit=10, offset=0)
+        leader_board = get_leader_board(limit=10, offset=0)
         self.assertEqual(len(leader_board), 1)
         self.assertEqual(HexBytes(leader_board[0]["holder"].hex()), HexBytes(address))
         self.assertEqual(leader_board[0]["position"], 1)
@@ -77,7 +79,7 @@ class TestLockingModel(TestCase):
         self.assertEqual(leader_board[0]["withdrawnAmount"], 1000)
         address_2 = Account.create().address
         add_sorted_events(address_2, 2000, 1000, 1000)
-        leader_board = LeaderBoard.get_leader_board(limit=10, offset=0)
+        leader_board = get_leader_board(limit=10, offset=0)
         self.assertEqual(len(leader_board), 2)
         self.assertEqual(HexBytes(leader_board[0]["holder"].hex()), HexBytes(address_2))
         self.assertEqual(leader_board[0]["position"], 1)
@@ -92,9 +94,9 @@ class TestLockingModel(TestCase):
 
     def test_get_leader_board_position(self):
         address = Account.create().address
-        self.assertIsNone(LeaderBoard.get_holder_position(address))
+        self.assertIsNone(get_leader_board_holder_position(address))
         add_sorted_events(address, 1000, 1000, 1000)
-        leader_board = LeaderBoard.get_holder_position(address)
+        leader_board = get_leader_board_holder_position(address)
         self.assertEqual(HexBytes(leader_board["holder"].hex()), HexBytes(address))
         self.assertEqual(leader_board["position"], 1)
         self.assertEqual(leader_board["lockedAmount"], 0)
@@ -102,7 +104,7 @@ class TestLockingModel(TestCase):
         self.assertEqual(leader_board["withdrawnAmount"], 1000)
         address_2 = Account.create().address
         add_sorted_events(address_2, 10000, 1000, 1000)
-        leader_board = LeaderBoard.get_holder_position(address)
+        leader_board = get_leader_board_holder_position(address)
         self.assertEqual(HexBytes(leader_board["holder"].hex()), HexBytes(address))
         self.assertEqual(leader_board["position"], 2)
         self.assertEqual(leader_board["lockedAmount"], 0)
@@ -110,12 +112,12 @@ class TestLockingModel(TestCase):
         self.assertEqual(leader_board["withdrawnAmount"], 1000)
 
     def test_get_leader_board_count(self):
-        self.assertEqual(LeaderBoard.get_count(), 0)
+        self.assertEqual(get_leader_board_count(), 0)
         address = Account.create().address
         add_sorted_events(address, 1000, 1000, 1000)
-        self.assertEqual(LeaderBoard.get_count(), 1)
+        self.assertEqual(get_leader_board_count(), 1)
         add_sorted_events(address, 1000, 1000, 1000)
-        self.assertEqual(LeaderBoard.get_count(), 1)
+        self.assertEqual(get_leader_board_count(), 1)
         address_2 = Account.create().address
         add_sorted_events(address_2, 1000, 1000, 1000)
-        self.assertEqual(LeaderBoard.get_count(), 2)
+        self.assertEqual(get_leader_board_count(), 2)
