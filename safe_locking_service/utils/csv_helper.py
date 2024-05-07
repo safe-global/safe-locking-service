@@ -1,7 +1,8 @@
 import csv
+from typing import IO
 
 
-def parse(stream, skip_header: bool = True):
+def parse(stream: IO, skip_header: bool = True):
     """
     Reads a CSV stream (file-like object) and yields each row one at a time, optionally skipping the header.
     """
