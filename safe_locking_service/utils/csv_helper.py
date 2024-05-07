@@ -1,8 +1,10 @@
 import csv
-from typing import IO
+from typing import IO, Generator
 
 
-def parse(stream: IO, skip_header: bool = True):
+def parse(
+    stream: IO[str], skip_header: bool = True
+) -> Generator[list[str], None, None]:
     """
     Reads a CSV stream (file-like object) and yields each row one at a time, optionally skipping the header.
     """
