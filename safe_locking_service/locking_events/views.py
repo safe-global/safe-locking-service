@@ -12,6 +12,9 @@ from safe_locking_service.locking_events.models import (
     LockEvent,
     UnlockEvent,
     WithdrawnEvent,
+    get_leader_board,
+    get_leader_board_count,
+    get_leader_board_holder_position,
 )
 from safe_locking_service.locking_events.pagination import (
     CustomListPagination,
@@ -88,12 +91,12 @@ class LeaderBoardView(ListAPIView):
     serializer_class = LeaderBoardSerializer
 
     def get_queryset(self, limit, offset):
-        return LockingService.get_leader_board(limit=limit, offset=offset)
+        return get_leader_board(limit=limit, offset=offset)
 
     def list(self, request, *args, **kwargs):
         paginator = CustomListPagination(self.request)
         queryset = self.get_queryset(paginator.limit, paginator.offset)
-        paginator.set_count(LockingService.get_leader_board_count())
+        paginator.set_count(get_leader_board_count())
         serializer = LeaderBoardSerializer(queryset, many=True)
 
         return paginator.get_paginated_response(serializer.data)
@@ -110,8 +113,7 @@ class LeaderBoardPositionView(RetrieveAPIView):
     serializer_class = LeaderBoardSerializer
 
     def get_queryset(self, address):
-        locking_service = LockingService(address)
-        return locking_service.get_leader_board_position()
+        return get_leader_board_holder_position(address)
 
     def get(self, request, address, format=None):
         if not fast_is_checksum_address(address):
