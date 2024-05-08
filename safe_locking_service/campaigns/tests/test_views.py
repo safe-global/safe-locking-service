@@ -1,18 +1,23 @@
 import uuid
 from datetime import timedelta
+from unittest.mock import patch
 
-from django.test import TestCase
+from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from faker import Faker
 from rest_framework import status
 
-from ...campaigns.tests.factories import (
-    ActivityMetadataFactory,
-    CampaignFactory,
-    PeriodFactory,
-)
+from ...campaigns.tests.factories import ActivityMetadataFactory, CampaignFactory
 from ...utils.timestamp_helper import get_formated_timestamp
+from ..forms import FileUploadForm
+from .csv_factory import CSVFactory
+from .factories import PeriodFactory
+
+fake = Faker(0)
 
 
 class TestCampaignViews(TestCase):
@@ -160,4 +165,73 @@ class TestCampaignViews(TestCase):
         self.assertEqual(
             campaign_response.get("activitiesMetadata")[0]["name"],
             activity_expected.name,
+        )
+
+
+class TestActivitiesUploadView(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin_user = User.objects.create_superuser(
+            "admin", "admin@example.com", "adminpass"
+        )
+        self.client.force_login(self.admin_user)
+        self.period = PeriodFactory()
+
+    @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
+    def test_form_retrieval(self, task_mock):
+        response = self.client.get(reverse("v1:campaigns:activities_upload"))
+
+        task_mock.assert_not_called()
+        self.assertEqual(200, response.status_code)
+        self.assertTemplateUsed(response, "activities/upload.html")
+        self.assertIsInstance(response.context["form"], FileUploadForm)
+
+    @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
+    def test_valid_activities_upload(self, task_mock):
+        csv_content = CSVFactory().create()
+        upload = SimpleUploadedFile(
+            "testfile.csv", csv_content.encode("utf-8"), content_type="text/csv"
+        )
+
+        response = self.client.post(
+            reverse("v1:campaigns:activities_upload"),
+            {"file": upload, "period": self.period.id},
+        )
+
+        task_mock.assert_called_once()
+        self.assertEqual(302, response.status_code)
+        self.assertRedirects(response, reverse("admin:index"))
+
+    @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
+    def test_empty_data_upload(self, task_mock):
+        response = self.client.get(reverse("v1:campaigns:activities_upload"), {})
+
+        task_mock.assert_not_called()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue("form" in response.context)
+        self.assertFalse(response.context["form"].is_valid())
+
+    @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
+    def test_wrong_header(self, task_mock):
+        address = "0x146f5Eb4313030Aa052C68a21072c8744F60E6B4"
+        points = fake.pyint()
+        type = fake.word()
+        csv_content = (
+            f"{fake.word()},{fake.word()},{fake.word()}\n{address},{points},{type}"
+        )
+        upload = SimpleUploadedFile(
+            "testfile.csv", csv_content.encode("utf-8"), content_type="text/csv"
+        )
+
+        response = self.client.post(
+            reverse("v1:campaigns:activities_upload"),
+            {"file": upload, "period": self.period.id},
+        )
+
+        task_mock.assert_not_called()
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(
+            response.context.get("error_message").startswith(
+                "Invalid CSV format: File does not include one or more of the following headers:"
+            )
         )
