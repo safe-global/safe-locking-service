@@ -1,9 +1,11 @@
+from django.db.models import Max
+
 from rest_framework.generics import ListAPIView
 
 from safe_locking_service.campaigns.serializers import CampaignSerializer
 from safe_locking_service.locking_events.pagination import SmallPagination
 
-from .mock_data import mock_campaign_data
+from .models import Campaign
 
 
 class CampaignsView(ListAPIView):
@@ -15,13 +17,14 @@ class CampaignsView(ListAPIView):
     serializer_class = CampaignSerializer
 
     def get_queryset(self):
-        # TODO Add properly query
-        # Mocking data for testing purposes
-        return mock_campaign_data
+        return (
+            Campaign.objects.prefetch_related("activity_metadata")
+            .annotate(last_updated=Max("periods__end_date"))
+            .order_by("-start_date")
+        )
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = self.serializer_class(data=queryset, many=True)
-        serializer.is_valid(raise_exception=True)
-        paginated_data = self.paginate_queryset(serializer.validated_data)
+        serializer = self.serializer_class(queryset, many=True)
+        paginated_data = self.paginate_queryset(serializer.data)
         return self.get_paginated_response(paginated_data)
