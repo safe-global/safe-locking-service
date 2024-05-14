@@ -16,7 +16,7 @@ from safe_locking_service.utils.timestamp_helper import get_formated_timestamp
 
 class TestCampaignViews(TestCase):
     def test_campaigns_view(self):
-        url = reverse("v1:locking_campaigns:campaigns-list")
+        url = reverse("v1:locking_campaigns:list-campaigns")
         response = self.client.get(url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # No campaigns
@@ -100,3 +100,44 @@ class TestCampaignViews(TestCase):
         self.assertIsNone(campaign_response.get("lastUpdated"))
         self.assertIsInstance(campaign_response.get("activities"), list)
         self.assertEqual(len(campaign_response.get("activities")), 0)
+
+    def test_retrieve_campaign_view(self):
+        campaign_id = 1
+        response = self.client.get(
+            reverse("v1:locking_campaigns:retrieve-campaign", args=(campaign_id,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        campaign_expected = CampaignFactory()
+        activity_expected = ActivityMetadataFactory(campaign=campaign_expected)
+        period_expected = PeriodFactory(campaign=campaign_expected)
+        campaign_id = campaign_expected.id
+
+        response = self.client.get(
+            reverse("v1:locking_campaigns:retrieve-campaign", args=(campaign_id,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        campaign_response = response.json()
+        self.assertEqual(campaign_response.get("campaignId"), campaign_expected.id)
+        self.assertEqual(campaign_response.get("name"), campaign_expected.name)
+        self.assertEqual(
+            campaign_response.get("description"), campaign_expected.description
+        )
+        self.assertEqual(
+            campaign_response.get("startDate"),
+            get_formated_timestamp(campaign_expected.start_date),
+        )
+        self.assertEqual(
+            campaign_response.get("endDate"),
+            get_formated_timestamp(campaign_expected.end_date),
+        )
+        self.assertEqual(
+            campaign_response.get("lastUpdated"),
+            get_formated_timestamp(period_expected.end_date),
+        )
+        self.assertEqual(len(campaign_response.get("activities")), 1)
+        self.assertEqual(
+            campaign_response.get("activities")[0]["name"], activity_expected.name
+        )
