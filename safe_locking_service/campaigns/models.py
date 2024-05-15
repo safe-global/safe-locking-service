@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.utils.text import slugify
 
@@ -5,14 +7,14 @@ from gnosis.eth.django.models import EthereumAddressV2Field
 
 
 class Campaign(models.Model):
-    id = models.SmallAutoField(primary_key=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
     name = models.CharField(max_length=50)
     description = models.CharField(blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"Campaign {self.id} {self.name}"
+        return f"Campaign {self.uuid} {self.name}"
 
 
 class Period(models.Model):
@@ -59,3 +61,12 @@ class Activity(models.Model):
 
     def __str__(self):
         return f"Activity {self.period} {self.address}"
+
+
+class ActivityMetadata(models.Model):
+    campaign = models.ForeignKey(
+        Campaign, on_delete=models.CASCADE, related_name="activity_metadata"
+    )
+    name = models.CharField(max_length=50)
+    description = models.CharField(blank=True)
+    max_points = models.PositiveBigIntegerField()
