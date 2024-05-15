@@ -174,7 +174,7 @@ class TestActivitiesUploadView(TestCase):
         self.admin_user = User.objects.create_superuser(
             "admin", "admin@example.com", "adminpass"
         )
-        self.client.force_login(self.admin_user)
+        self.client.login(username="admin", password="adminpass")
         self.period = PeriodFactory()
 
     @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
