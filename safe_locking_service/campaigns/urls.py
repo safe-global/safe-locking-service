@@ -7,7 +7,7 @@ app_name = "campaigns"
 urlpatterns = [
     path("campaigns/", views.CampaignsView.as_view(), name="list-campaigns"),
     path(
-        "campaigns/<int:campaign_id>/",
+        "campaigns/<str:campaign_search_id>/",
         views.RetrieveCampaignView.as_view(),
         name="retrieve-campaign",
     ),

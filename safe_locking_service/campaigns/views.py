@@ -39,16 +39,15 @@ class RetrieveCampaignView(RetrieveAPIView):
 
     serializer_class = CampaignSerializer
 
-    def get_queryset(self, campaing_id: int):
+    def get_queryset(self, campaign_search_id: int):
         return (
-            Campaign.objects.filter(id=campaing_id)
+            Campaign.objects.filter(campaign_search_id=campaign_search_id)
             .prefetch_related("activity_metadata")
             .annotate(last_updated=Max("periods__end_date"))
-            .order_by("-start_date")
         )
 
-    def get(self, request, campaign_id, format=None):
-        queryset = self.get_queryset(campaign_id)
+    def get(self, request, campaign_search_id, format=None):
+        queryset = self.get_queryset(campaign_search_id)
         if not queryset:
             return Response(
                 status=status.HTTP_404_NOT_FOUND,

@@ -19,7 +19,7 @@ class CampaignSerializer(serializers.Serializer):
     activities = ActivityMetadataSerializer(many=True, source="activity_metadata")
 
     def get_campaign_id(self, obj: Campaign):
-        return obj.id
+        return obj.campaign_search_id
 
     def get_last_updated(self, obj: Campaign):
         return obj.last_updated
