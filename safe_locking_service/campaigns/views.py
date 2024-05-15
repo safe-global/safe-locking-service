@@ -46,7 +46,8 @@ class RetrieveCampaignView(RetrieveAPIView):
             .annotate(last_updated=Max("periods__end_date"))
         )
 
-    def get(self, request, campaign_search_id, format=None):
+    def get(self, request, *args, **kwargs):
+        campaign_search_id = kwargs["campaign_search_id"]
         queryset = self.get_queryset(campaign_search_id)
         if not queryset:
             return Response(
