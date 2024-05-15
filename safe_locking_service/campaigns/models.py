@@ -13,11 +13,6 @@ class Campaign(models.Model):
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        if not self.campaign_search_id:
-            self.campaign_search_id = slugify(self.name)
-        super(Campaign, self).save(*args, **kwargs)
-
     def __str__(self):
         return f"Campaign {self.uuid} {self.name}"
 

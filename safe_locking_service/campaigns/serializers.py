@@ -21,7 +21,7 @@ class CampaignSerializer(serializers.Serializer):
     )
 
     def get_campaign_id(self, obj: Campaign):
-        return obj.campaign_search_id
+        return obj.uuid
 
     def get_last_updated(self, obj: Campaign):
         return obj.last_updated
