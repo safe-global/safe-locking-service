@@ -12,7 +12,7 @@ class CampaignsTestCase(TestCase):
     def test_campaign_creation(self):
         campaign = CampaignFactory.create()
 
-        self.assertEqual(str(campaign), f"Campaign {campaign.id} {campaign.name}")
+        self.assertEqual(str(campaign), f"Campaign {campaign.uuid} {campaign.name}")
 
     def test_campaign_with_null_name(self):
         campaign = CampaignFactory.build(name=None)
