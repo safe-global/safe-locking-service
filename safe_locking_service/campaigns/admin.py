@@ -1,4 +1,6 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 from .models import Activity, ActivityMetadata, Campaign, Period
 
@@ -15,6 +17,21 @@ class CampaignAdmin(admin.ModelAdmin):
     )
 
 
+@admin.action(description="Upload data for selected period")
+def upload_period_data_action(modeladmin, request, queryset):
+    selected_periods = queryset.count()
+    if selected_periods != 1:
+        messages.error(
+            request, "Please select exactly one item to perform this action."
+        )
+        return
+    redirect_url = (
+        reverse("v1:campaigns:activities_upload")
+        + f"?period_slug={queryset.first().slug}"
+    )
+    return HttpResponseRedirect(redirect_url)
+
+
 @admin.register(Period)
 class PeriodAdmin(admin.ModelAdmin):
     list_display = (
@@ -29,6 +46,8 @@ class PeriodAdmin(admin.ModelAdmin):
         "start_date",
         "end_date",
     )
+
+    actions = [upload_period_data_action]
 
 
 @admin.register(Activity)
