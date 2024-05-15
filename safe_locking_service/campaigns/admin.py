@@ -5,7 +5,7 @@ from .models import Activity, Campaign, Period
 
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "start_date", "end_date")
+    list_display = ("uuid", "name", "start_date", "end_date")
     search_fields = ("name",)
     fields = (
         "name",
