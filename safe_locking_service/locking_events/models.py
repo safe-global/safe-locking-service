@@ -16,6 +16,8 @@ from gnosis.eth.django.models import (
     Uint96Field,
 )
 
+from safe_locking_service.utils.timestamp_helper import get_formated_timestamp
+
 
 class LeaderBoardRow(TypedDict):
     position: int
@@ -101,7 +103,7 @@ class CommonEvent(models.Model):
 
         :return: serialized timestamp
         """
-        return self.timestamp.isoformat().replace("+00:00", "Z")
+        return get_formated_timestamp(self.timestamp)
 
     class Meta:
         abstract = True
