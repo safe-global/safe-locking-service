@@ -17,7 +17,6 @@ class Campaign(models.Model):
         return f"Campaign {self.uuid} {self.name}"
 
 
-
 class Period(models.Model):
     campaign = models.ForeignKey(
         Campaign, on_delete=models.CASCADE, related_name="periods"
