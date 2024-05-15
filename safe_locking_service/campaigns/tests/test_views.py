@@ -6,12 +6,12 @@ from django.utils import timezone
 
 from rest_framework import status
 
-from safe_locking_service.campaigns.tests.factories import (
+from ...campaigns.tests.factories import (
     ActivityMetadataFactory,
     CampaignFactory,
     PeriodFactory,
 )
-from safe_locking_service.utils.timestamp_helper import get_formated_timestamp
+from ...utils.timestamp_helper import get_formated_timestamp
 
 
 class TestCampaignViews(TestCase):
