@@ -47,7 +47,7 @@ urlpatterns_v1 = [
         include("safe_locking_service.locking_events.urls", namespace="locking_events"),
     ),
     path(
-        "",
+        "campaigns/",
         include("safe_locking_service.campaigns.urls", namespace="locking_campaigns"),
     ),
 ]
