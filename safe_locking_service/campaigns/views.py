@@ -1,4 +1,6 @@
 from django.db.models import Max
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -25,6 +27,7 @@ class CampaignsView(ListAPIView):
             .order_by("-start_date")
         )
 
+    @method_decorator(cache_page(1 * 60))  # 1 minute
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
@@ -46,6 +49,7 @@ class RetrieveCampaignView(RetrieveAPIView):
             .annotate(last_updated=Max("periods__end_date"))
         )
 
+    @method_decorator(cache_page(1 * 60))  # 1 minute
     def get(self, request, *args, **kwargs):
         campaign_search_id = kwargs["campaign_search_id"]
         queryset = self.get_queryset(campaign_search_id)
