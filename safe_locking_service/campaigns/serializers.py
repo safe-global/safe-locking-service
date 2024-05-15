@@ -10,7 +10,7 @@ class ActivityMetadataSerializer(serializers.Serializer):
 
 
 class CampaignSerializer(serializers.Serializer):
-    campaign_id = serializers.SerializerMethodField()
+    resource_id = serializers.SerializerMethodField()
     name = serializers.CharField()
     description = serializers.CharField()
     start_date = serializers.DateTimeField()
@@ -20,7 +20,7 @@ class CampaignSerializer(serializers.Serializer):
         many=True, source="activity_metadata"
     )
 
-    def get_campaign_id(self, obj: Campaign):
+    def get_resource_id(self, obj: Campaign):
         return obj.uuid
 
     def get_last_updated(self, obj: Campaign):

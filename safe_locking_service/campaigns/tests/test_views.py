@@ -39,7 +39,7 @@ class TestCampaignViews(TestCase):
         self.assertEqual(len(response_json["results"]), 1)
         campaign_response = response_json["results"][0]
         self.assertEqual(
-            campaign_response.get("campaignId"), str(campaign_expected.uuid)
+            campaign_response.get("resourceId"), str(campaign_expected.uuid)
         )
         self.assertEqual(campaign_response.get("name"), campaign_expected.name)
         self.assertEqual(
@@ -73,7 +73,7 @@ class TestCampaignViews(TestCase):
         self.assertEqual(len(response_json["results"]), 1)
         campaign_response = response_json["results"][0]
         self.assertEqual(
-            campaign_response.get("campaignId"), str(campaign_expected.uuid)
+            campaign_response.get("resourceId"), str(campaign_expected.uuid)
         )
         self.assertEqual(campaign_response.get("name"), campaign_expected.name)
         self.assertEqual(
@@ -101,7 +101,7 @@ class TestCampaignViews(TestCase):
         response_json = response.json()
         self.assertEqual(len(response_json["results"]), 2)
         campaign_response = response_json["results"][0]
-        self.assertEqual(campaign_response.get("campaignId"), str(last_campaign.uuid))
+        self.assertEqual(campaign_response.get("resourceId"), str(last_campaign.uuid))
         self.assertEqual(campaign_response.get("name"), last_campaign.name)
         self.assertEqual(
             campaign_response.get("description"), last_campaign.description
@@ -119,9 +119,9 @@ class TestCampaignViews(TestCase):
         self.assertEqual(len(campaign_response.get("activitiesMetadata")), 0)
 
     def test_retrieve_campaign_view(self):
-        campaign_id = uuid.uuid4()
+        resource_id = uuid.uuid4()
         response = self.client.get(
-            reverse("v1:locking_campaigns:retrieve-campaign", args=(campaign_id,)),
+            reverse("v1:locking_campaigns:retrieve-campaign", args=(resource_id,)),
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -129,16 +129,16 @@ class TestCampaignViews(TestCase):
         campaign_expected = CampaignFactory()
         activity_expected = ActivityMetadataFactory(campaign=campaign_expected)
         period_expected = PeriodFactory(campaign=campaign_expected)
-        campaign_id = campaign_expected.uuid
+        resource_id = campaign_expected.uuid
 
         response = self.client.get(
-            reverse("v1:locking_campaigns:retrieve-campaign", args=(campaign_id,)),
+            reverse("v1:locking_campaigns:retrieve-campaign", args=(resource_id,)),
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         campaign_response = response.json()
         self.assertEqual(
-            campaign_response.get("campaignId"), str(campaign_expected.uuid)
+            campaign_response.get("resourceId"), str(campaign_expected.uuid)
         )
         self.assertEqual(campaign_response.get("name"), campaign_expected.name)
         self.assertEqual(
