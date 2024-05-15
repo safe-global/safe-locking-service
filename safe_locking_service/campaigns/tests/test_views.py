@@ -58,8 +58,10 @@ class TestCampaignViews(TestCase):
             campaign_response.get("lastUpdated"),
             get_formated_timestamp(period_last.end_date),
         )
-        self.assertEqual(len(campaign_response.get("activities")), 1)
-        self.assertEqual(campaign_response.get("activities")[0]["name"], activity.name)
+        self.assertEqual(len(campaign_response.get("activitiesMetadata")), 1)
+        self.assertEqual(
+            campaign_response.get("activitiesMetadata")[0]["name"], activity.name
+        )
 
     def test_no_activities_periods_campaigns_view(self):
         # Add a campaign without activities and without period
@@ -85,8 +87,8 @@ class TestCampaignViews(TestCase):
             get_formated_timestamp(campaign_expected.end_date),
         )
         self.assertIsNone(campaign_response.get("lastUpdated"))
-        self.assertIsInstance(campaign_response.get("activities"), list)
-        self.assertEqual(len(campaign_response.get("activities")), 0)
+        self.assertIsInstance(campaign_response.get("activitiesMetadata"), list)
+        self.assertEqual(len(campaign_response.get("activitiesMetadata")), 0)
 
     def test_sort_campaign_view(self):
         url = reverse("v1:locking_campaigns:list-campaigns")
@@ -114,8 +116,8 @@ class TestCampaignViews(TestCase):
             get_formated_timestamp(last_campaign.end_date),
         )
         self.assertIsNone(campaign_response.get("lastUpdated"))
-        self.assertIsInstance(campaign_response.get("activities"), list)
-        self.assertEqual(len(campaign_response.get("activities")), 0)
+        self.assertIsInstance(campaign_response.get("activitiesMetadata"), list)
+        self.assertEqual(len(campaign_response.get("activitiesMetadata")), 0)
 
     def test_retrieve_campaign_view(self):
         campaing_search_id = 1
@@ -159,7 +161,8 @@ class TestCampaignViews(TestCase):
             campaign_response.get("lastUpdated"),
             get_formated_timestamp(period_expected.end_date),
         )
-        self.assertEqual(len(campaign_response.get("activities")), 1)
+        self.assertEqual(len(campaign_response.get("activitiesMetadata")), 1)
         self.assertEqual(
-            campaign_response.get("activities")[0]["name"], activity_expected.name
+            campaign_response.get("activitiesMetadata")[0]["name"],
+            activity_expected.name,
         )

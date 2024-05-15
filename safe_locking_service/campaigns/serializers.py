@@ -16,7 +16,9 @@ class CampaignSerializer(serializers.Serializer):
     start_date = serializers.DateTimeField()
     end_date = serializers.DateTimeField()
     last_updated = serializers.SerializerMethodField()
-    activities = ActivityMetadataSerializer(many=True, source="activity_metadata")
+    activities_metadata = ActivityMetadataSerializer(
+        many=True, source="activity_metadata"
+    )
 
     def get_campaign_id(self, obj: Campaign):
         return obj.campaign_search_id
