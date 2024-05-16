@@ -1,9 +1,13 @@
+from django.core.exceptions import ValidationError
 from django.db import DataError, IntegrityError
 from django.test import TestCase
 
 from faker import Faker
 
-from safe_locking_service.campaigns.tests.factories import CampaignFactory
+from safe_locking_service.campaigns.tests.factories import (
+    CampaignFactory,
+    PeriodFactory,
+)
 
 fake = Faker(seed=0)
 
@@ -39,3 +43,19 @@ class CampaignsTestCase(TestCase):
         campaign = CampaignFactory.build(end_date=None)
 
         campaign.save()
+
+
+class PeriodTestCase(TestCase):
+    def test_allows_same_dates(self):
+        date = fake.date()
+
+        PeriodFactory(end_date=date, start_date=date)
+
+    def test_does_not_allow_end_date_before_start_date(self):
+        start_date = fake.future_date()
+        end_date = fake.past_date()
+
+        period = PeriodFactory(end_date=end_date, start_date=start_date)
+
+        with self.assertRaises(ValidationError):
+            period.full_clean()

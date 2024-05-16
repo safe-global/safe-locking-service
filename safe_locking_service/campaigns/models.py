@@ -2,14 +2,13 @@ import uuid
 from decimal import Decimal
 from typing import List, TypedDict
 
+from django.core.exceptions import ValidationError
 from django.db import connection, models
 from django.db.backends.utils import CursorWrapper
 from django.utils.text import slugify
-
 from eth_typing import ChecksumAddress
-from hexbytes import HexBytes
-
 from gnosis.eth.django.models import EthereumAddressV2Field
+from hexbytes import HexBytes
 
 
 class LeaderBoardCampaignRow(TypedDict):
@@ -54,6 +53,15 @@ class Period(models.Model):
             self.slug = slugify(f"{self.start_date}-{self.end_date}")
         super(Period, self).save(*args, **kwargs)
 
+    def clean(self):
+        if self.start_date > self.end_date:
+            raise ValidationError(
+                {
+                    "start_date": "Start date cannot be after end date",
+                    "end_date": "End date cannot be before start date",
+                }
+            )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -97,7 +105,7 @@ class ActivityMetadata(models.Model):
 
 
 def get_campaign_leader_board_position(
-    uuid: str, address: ChecksumAddress
+        uuid: str, address: ChecksumAddress
 ) -> LeaderBoardCampaignRow:
     """
 
