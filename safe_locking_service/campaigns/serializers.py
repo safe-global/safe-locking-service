@@ -2,6 +2,8 @@ from typing import Dict
 
 from rest_framework import serializers
 
+from gnosis.eth.utils import fast_to_checksum_address
+
 from safe_locking_service.campaigns.models import Campaign
 
 
@@ -37,7 +39,7 @@ class CampaignLeaderBoardSerializer(serializers.Serializer):
     total_boosted_points = serializers.SerializerMethodField()
 
     def get_holder(self, obj: Dict):
-        return obj["address"]
+        return fast_to_checksum_address(bytes(obj["address"]))
 
     def get_total_boosted_points(self, obj: Dict):
         return obj["total_campaign_boosted_points"]

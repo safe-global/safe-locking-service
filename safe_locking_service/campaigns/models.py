@@ -1,9 +1,34 @@
 import uuid
+from decimal import Decimal
+from typing import List, TypedDict
 
-from django.db import models
+from django.db import connection, models
+from django.db.backends.utils import CursorWrapper
 from django.utils.text import slugify
 
+from eth_typing import ChecksumAddress
+from hexbytes import HexBytes
+
 from gnosis.eth.django.models import EthereumAddressV2Field
+
+
+class LeaderBoardCampaignRow(TypedDict):
+    address: ChecksumAddress
+    total_campaign_points: int
+    total_campaign_boosted_points: Decimal
+    last_boost: Decimal
+    position: int
+
+
+def fetch_all_from_cursor(cursor: CursorWrapper) -> List[LeaderBoardCampaignRow]:
+    """
+
+    :param cursor:
+    :return: all rows from a db cursor as a List of `LeaderBoardCampaignRow`.
+    """
+    columns = [col[0] for col in cursor.description]
+
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
 class Campaign(models.Model):
@@ -70,3 +95,33 @@ class ActivityMetadata(models.Model):
     name = models.CharField(max_length=50)
     description = models.CharField(blank=True)
     max_points = models.PositiveBigIntegerField()
+
+
+def get_campaign_leader_board_position(uuid, address: ChecksumAddress):
+    """
+
+    :return:
+    """
+
+    query = """
+    Select * FROM
+    (SELECT "campaigns_activity"."address",
+       SUM("campaigns_activity"."total_points") AS "total_campaign_points",
+       SUM("campaigns_activity"."total_boosted_points") AS "total_campaign_boosted_points",
+       (SUM("campaigns_activity"."total_boosted_points") / SUM("campaigns_activity"."total_points")) AS "last_boost",
+       ROW_NUMBER() OVER (ORDER BY SUM("campaigns_activity"."total_boosted_points") DESC) AS "position"
+    FROM "campaigns_activity"
+    INNER JOIN "campaigns_period"
+    ON ("campaigns_activity"."period_id" = "campaigns_period"."id")
+    INNER JOIN "campaigns_campaign"
+    ON ("campaigns_period"."campaign_id" = "campaigns_campaign"."id")
+    WHERE "campaigns_campaign"."uuid" = %s::uuid
+    GROUP BY "campaigns_activity"."address"
+    ORDER BY 3 DESC) AS LEADERTABLE where address = %s;
+    """
+
+    with connection.cursor() as cursor:
+        holder_address = HexBytes(address)
+        cursor.execute(query, [uuid, holder_address])
+        if result := fetch_all_from_cursor(cursor):
+            return result[0]

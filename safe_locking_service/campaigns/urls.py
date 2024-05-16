@@ -18,4 +18,9 @@ urlpatterns = [
         views.CampaignLeaderBoardView.as_view(),
         name="leaderboard-campaign",
     ),
+    path(
+        "campaigns/<str:resource_id>/leaderboard/<str:address>/",
+        views.CampaignLeaderBoardPositionView.as_view(),
+        name="leaderboard-campaign-position",
+    ),
 ]

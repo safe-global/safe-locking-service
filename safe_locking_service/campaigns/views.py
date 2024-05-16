@@ -5,17 +5,19 @@ from typing import IO
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import F, Max, Sum, Window
-from django.db.models.functions import RowNumber
+from django.db.models.functions import Rank
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
+from eth_typing import ChecksumAddress
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 
+from safe_locking_service.campaigns.models import get_campaign_leader_board_position
 from safe_locking_service.campaigns.serializers import (
     CampaignLeaderBoardSerializer,
     CampaignSerializer,
@@ -152,15 +154,40 @@ class CampaignLeaderBoardView(ListAPIView):
             .order_by(F("total_campaign_boosted_points").desc())
             .annotate(
                 position=Window(
-                    expression=RowNumber(),
+                    expression=Rank(),
                     order_by=F("total_campaign_boosted_points").desc(),
                 )
             )
         )
 
+    @method_decorator(cache_page(1 * 60))  # 1 minute
     def list(self, request, *args, **kwargs):
         resource_id = kwargs["resource_id"]
         queryset = self.get_queryset(resource_id)
         serializer = self.serializer_class(queryset, many=True)
         paginated_data = self.paginate_queryset(serializer.data)
         return self.get_paginated_response(paginated_data)
+
+
+class CampaignLeaderBoardPositionView(RetrieveAPIView):
+    """
+    Return the leaderboard for a provided campaign uuid and address
+    """
+
+    serializer_class = CampaignLeaderBoardSerializer
+
+    def get_queryset(self, resource_id: int, address: ChecksumAddress):
+        return get_campaign_leader_board_position(resource_id, address)
+
+    @method_decorator(cache_page(1 * 60))  # 1 minute
+    def get(self, request, *args, **kwargs):
+        resource_id = kwargs["resource_id"]
+        address = kwargs["address"]
+        queryset = self.get_queryset(resource_id, address)
+        if not queryset:
+            return Response(
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = self.serializer_class(queryset)
+        return Response(status=status.HTTP_200_OK, data=serializer.data)
