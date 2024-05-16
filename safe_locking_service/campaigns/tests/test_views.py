@@ -341,6 +341,16 @@ class TestActivitiesUploadView(TestCase):
         self.assertEqual(first_position["totalBoostedPoints"], 600)
 
     def test_leaderboard_campaign_position_view(self):
+        # Should return 404 error
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:leaderboard-campaign-position",
+                args=(uuid.uuid4(), Account.create().address),
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
         campaign = CampaignFactory()
         previous_day = timezone.now().date() - timedelta(days=1)
         period_1 = PeriodFactory(
@@ -349,6 +359,7 @@ class TestActivitiesUploadView(TestCase):
         period_2 = PeriodFactory(campaign=campaign)
         safe_address_position_1 = Account.create().address
         safe_address_position_2 = Account.create().address
+
         ActivityFactory(
             period=period_1,
             address=safe_address_position_1,
