@@ -1,3 +1,5 @@
+import datetime
+
 from django.test import TestCase
 
 from eth_account import Account
@@ -10,9 +12,11 @@ from .factories import PeriodFactory
 fake = Faker()
 
 
-def activity_entry():
+def activity_entry(start_date: datetime.date, end_date: datetime.date):
     return {
         "safe_address": Account.create().address,
+        "period_start": str(start_date),
+        "period_end": str(end_date),
         "total_points": fake.pyint(),
         "boost": fake.pydecimal(left_digits=7, right_digits=8),
         "total_boosted_points": fake.pydecimal(left_digits=7, right_digits=8),
@@ -23,11 +27,17 @@ def activity_entry():
 
 class ProcessCSVTestCase(TestCase):
     def setUp(self):
-        self.period = PeriodFactory()
+        start_date = fake.date_object()
+        end_date = start_date + datetime.timedelta(days=7)
+        self.period = PeriodFactory(start_date=start_date, end_date=end_date)
 
     def test_process_csv_success(self):
-        activity_1 = activity_entry()
-        activity_2 = activity_entry()
+        activity_1 = activity_entry(
+            start_date=self.period.start_date, end_date=self.period.end_date
+        )
+        activity_2 = activity_entry(
+            start_date=self.period.start_date, end_date=self.period.end_date
+        )
 
         process_csv_task(
             self.period.id,
@@ -52,8 +62,12 @@ class ProcessCSVTestCase(TestCase):
         )
 
     def test_process_csv_clear_activities(self):
-        activity = activity_entry()
-        new_activity = activity_entry()
+        activity = activity_entry(
+            start_date=self.period.start_date, end_date=self.period.end_date
+        )
+        new_activity = activity_entry(
+            start_date=self.period.start_date, end_date=self.period.end_date
+        )
 
         process_csv_task(self.period.id, [activity])
         process_csv_task(self.period.id, [new_activity])
@@ -66,3 +80,54 @@ class ProcessCSVTestCase(TestCase):
             new_activity["total_boosted_points"],
             actual_new_activity.total_boosted_points,
         )
+
+    def test_activity_in_between_period(self):
+        start_date = self.period.start_date + datetime.timedelta(days=1)
+        end_date = self.period.end_date - datetime.timedelta(days=1)
+        activity = activity_entry(
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        process_csv_task(
+            self.period.id,
+            [
+                activity,
+            ],
+        )
+
+        self.assertEqual(1, Activity.objects.filter(period=self.period).count())
+
+    def test_activity_before_start_date(self):
+        start_date = self.period.start_date - datetime.timedelta(days=1)
+        end_date = self.period.start_date
+        activity = activity_entry(
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        process_csv_task(
+            self.period.id,
+            [
+                activity,
+            ],
+        )
+
+        self.assertEqual(0, Activity.objects.filter(period=self.period).count())
+
+    def test_activity_after_end_date(self):
+        start_date = self.period.end_date
+        end_date = self.period.end_date + datetime.timedelta(days=1)
+        activity = activity_entry(
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        process_csv_task(
+            self.period.id,
+            [
+                activity,
+            ],
+        )
+
+        self.assertEqual(0, Activity.objects.filter(period=self.period).count())

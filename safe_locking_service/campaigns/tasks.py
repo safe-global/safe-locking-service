@@ -1,3 +1,4 @@
+import datetime
 from typing import Any
 
 from django.db import transaction
@@ -35,6 +36,12 @@ def process_csv_task(period_id: int, activities_list: list[dict[str, Any]]) -> N
 
             activities = []
             for input_activity in activities_list:
+                input_activity_start_date = datetime.datetime.strptime(
+                    input_activity["period_start"], "%Y-%m-%d"
+                ).date()
+                input_activity_end_date = datetime.datetime.strptime(
+                    input_activity["period_end"], "%Y-%m-%d"
+                ).date()
                 activity = Activity(
                     period=period,
                     address=input_activity["safe_address"],
@@ -42,7 +49,17 @@ def process_csv_task(period_id: int, activities_list: list[dict[str, Any]]) -> N
                     boost=input_activity["boost"],
                     total_boosted_points=input_activity["total_boosted_points"],
                 )
-                # TODO if activity is not in the range of a Period, skip it
+                if input_activity_start_date < period.start_date:
+                    logger.warning(
+                        f"Start Date for activity for {activity.address}, {input_activity_start_date} out of range for given period: {period.start_date}. Skipping."
+                    )
+                    continue
+                if input_activity_end_date > period.end_date:
+                    logger.warning(
+                        f"End Date for activity for {activity.address}, {input_activity_end_date} out of range for given period: {period.end_date}. Skipping."
+                    )
+                    continue
+
                 activities.append(activity)
 
             for start in range(0, len(activities), BATCH_SIZE):
