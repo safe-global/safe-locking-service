@@ -4,10 +4,10 @@ from io import TextIOWrapper
 from typing import IO
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Max
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.db.models import Max, Sum
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
@@ -15,12 +15,16 @@ from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 
-from safe_locking_service.campaigns.serializers import CampaignSerializer
+from safe_locking_service.campaigns.serializers import (
+    CampaignLeaderBoardSerializer,
+    CampaignSerializer,
+)
 from safe_locking_service.locking_events.pagination import SmallPagination
 
 from . import tasks
 from .forms import FileUploadForm
 from .models import Campaign, Period
+from .models import Activity, Campaign
 
 
 class CampaignsView(ListAPIView):
@@ -124,3 +128,32 @@ def process_activity_file(period: Period, file: IO[str]) -> None:
 
     activities_list = [row for row in reader]
     tasks.process_csv_task.delay(period.id, activities_list)
+
+class CampaignLeaderBoardView(ListAPIView):
+    """
+    Return the leaderboard for a provided campaign uuid
+    """
+
+    pagination_class = SmallPagination
+    serializer_class = CampaignLeaderBoardSerializer
+
+    def get_queryset(self, resource_id: int):
+        return (
+            Activity.objects.select_related("period__campaign")
+            .filter(period__campaign__uuid=resource_id)
+            .values("address")
+            .annotate(total_campaign_points=Sum("total_points"))
+            .annotate(
+                last_boost=Activity.objects.select_related("period")
+                .values("boost")
+                .order_by("-period__end_date")
+            )
+            .annotate(total_campaign_boosted_points=Sum("total_boosted_points"))
+        )
+
+    def list(self, request, *args, **kwargs):
+        resource_id = kwargs["resource_id"]
+        queryset = self.get_queryset(resource_id)
+        serializer = self.serializer_class(queryset, many=True)
+        paginated_data = self.paginate_queryset(serializer.data)
+        return self.get_paginated_response(paginated_data)

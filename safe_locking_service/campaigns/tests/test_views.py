@@ -9,9 +9,15 @@ from django.urls import reverse
 from django.utils import timezone
 
 from faker import Faker
+
+from eth_account import Account
 from rest_framework import status
 
-from ...campaigns.tests.factories import ActivityMetadataFactory, CampaignFactory
+from ...campaigns.tests.factories import (
+    ActivityFactory,
+    ActivityMetadataFactory,
+    CampaignFactory,
+)
 from ...utils.timestamp_helper import get_formated_timestamp
 from ..forms import FileUploadForm
 from .csv_factory import CSVFactory
@@ -167,7 +173,6 @@ class TestCampaignViews(TestCase):
             activity_expected.name,
         )
 
-
 class TestActivitiesUploadView(TestCase):
     def setUp(self):
         self.client = Client()
@@ -235,3 +240,34 @@ class TestActivitiesUploadView(TestCase):
                 "Invalid CSV format: File does not include one or more of the following headers:"
             )
         )
+
+    def test_empty_leaderboard_campaigns_view(self):
+        resource_id = str(CampaignFactory().uuid)
+        response = self.client.get(
+            reverse("v1:locking_campaigns:leaderboard-campaign", args=(resource_id,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # No campaigns
+        response_json = response.json()
+        self.assertEqual(response_json["count"], 0)
+
+    def test_leaderboard_campaigns_view(self):
+        campaign = CampaignFactory()
+        previous_day = timezone.now().date() - timedelta(days=1)
+        period_1 = PeriodFactory(
+            campaign=campaign, start_date=previous_day, end_date=previous_day
+        )
+        period_2 = PeriodFactory(campaign=campaign)
+        safe_address = Account.create().address
+        activity_expected = ActivityFactory(period=period_1, address=safe_address)
+        resource_id = campaign.uuid
+        response = self.client.get(
+            reverse("v1:locking_campaigns:leaderboard-campaign", args=(resource_id,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # No campaigns
+        response_json = response.json()
+        self.assertEqual(response_json["count"], 1)
+        self.assertEqual()

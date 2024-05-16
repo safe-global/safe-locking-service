@@ -1,9 +1,10 @@
 from django.utils import timezone
 
+from eth_account import Account
 from factory import Faker, LazyFunction, SubFactory
 from factory.django import DjangoModelFactory
 
-from ..models import ActivityMetadata, Campaign, Period
+from ..models import Activity, ActivityMetadata, Campaign, Period
 
 
 class CampaignFactory(DjangoModelFactory):
@@ -23,6 +24,17 @@ class PeriodFactory(DjangoModelFactory):
     campaign = SubFactory(CampaignFactory)
     start_date = LazyFunction(lambda: timezone.now().date())
     end_date = LazyFunction(lambda: timezone.now().date())
+
+
+class ActivityFactory(DjangoModelFactory):
+    class Meta:
+        model = Activity
+
+    period = SubFactory(PeriodFactory)
+    address = LazyFunction(lambda: Account.create().address)
+    total_points = Faker("pyint")
+    boost = Faker("pyint")
+    total_boosted_points = Faker("pyint")
 
 
 class ActivityMetadataFactory(DjangoModelFactory):
