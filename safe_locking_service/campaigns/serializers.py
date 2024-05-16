@@ -39,6 +39,8 @@ class CampaignLeaderBoardSerializer(serializers.Serializer):
     total_boosted_points = serializers.SerializerMethodField()
 
     def get_holder(self, obj: Dict):
+        if isinstance(obj["address"], str):
+            return obj["address"]
         return fast_to_checksum_address(bytes(obj["address"]))
 
     def get_total_boosted_points(self, obj: Dict):
