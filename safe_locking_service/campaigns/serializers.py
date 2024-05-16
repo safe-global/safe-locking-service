@@ -1,6 +1,8 @@
+from typing import Dict
+
 from rest_framework import serializers
 
-from safe_locking_service.campaigns.models import Activity, Campaign
+from safe_locking_service.campaigns.models import Campaign
 
 
 class ActivityMetadataSerializer(serializers.Serializer):
@@ -30,12 +32,18 @@ class CampaignSerializer(serializers.Serializer):
 class CampaignLeaderBoardSerializer(serializers.Serializer):
     holder = serializers.SerializerMethodField()
     position = serializers.IntegerField()
-    total_boost = serializers.DecimalField(max_digits=15, decimal_places=8)
-    total_points = serializers.IntegerField()
+    boost = serializers.SerializerMethodField()
+    total_points = serializers.SerializerMethodField()
     total_boosted_points = serializers.SerializerMethodField()
 
-    def get_holder(self, obj: Activity):
+    def get_holder(self, obj: Dict):
         return obj["address"]
 
-    def get_total_boosted_points(self, obj: Activity):
+    def get_total_boosted_points(self, obj: Dict):
         return obj["total_campaign_boosted_points"]
+
+    def get_boost(self, obj: Dict):
+        return obj["last_boost"]
+
+    def get_total_points(self, obj: Dict):
+        return obj["total_campaign_points"]

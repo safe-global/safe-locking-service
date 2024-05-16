@@ -8,9 +8,8 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from faker import Faker
-
 from eth_account import Account
+from faker import Faker
 from rest_framework import status
 
 from ...campaigns.tests.factories import (
@@ -173,6 +172,7 @@ class TestCampaignViews(TestCase):
             activity_expected.name,
         )
 
+
 class TestActivitiesUploadView(TestCase):
     def setUp(self):
         self.client = Client()
@@ -259,8 +259,37 @@ class TestActivitiesUploadView(TestCase):
             campaign=campaign, start_date=previous_day, end_date=previous_day
         )
         period_2 = PeriodFactory(campaign=campaign)
-        safe_address = Account.create().address
-        activity_expected = ActivityFactory(period=period_1, address=safe_address)
+        safe_address_position_1 = Account.create().address
+        safe_address_position_2 = Account.create().address
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_1,
+            total_points=100,
+            boost=2,
+            total_boosted_points=200,
+        )
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_2,
+            total_points=100,
+            boost=1,
+            total_boosted_points=100,
+        )
+        ActivityFactory(
+            period=period_2,
+            address=safe_address_position_1,
+            total_points=100,
+            boost=2,
+            total_boosted_points=200,
+        )
+        ActivityFactory(
+            period=period_2,
+            address=safe_address_position_2,
+            total_points=100,
+            boost=1,
+            total_boosted_points=100,
+        )
+
         resource_id = campaign.uuid
         response = self.client.get(
             reverse("v1:locking_campaigns:leaderboard-campaign", args=(resource_id,)),
@@ -269,5 +298,44 @@ class TestActivitiesUploadView(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # No campaigns
         response_json = response.json()
-        self.assertEqual(response_json["count"], 1)
-        self.assertEqual()
+        self.assertEqual(response_json["count"], 2)
+
+        position_1 = response_json["results"][0]
+        self.assertEqual(position_1["holder"], safe_address_position_1)
+        self.assertEqual(position_1["position"], 1)
+        self.assertEqual(position_1["totalPoints"], 200)
+        self.assertEqual(position_1["boost"], 2)
+        self.assertEqual(position_1["totalBoostedPoints"], 400)
+
+        position_2 = response_json["results"][1]
+        self.assertEqual(position_2["holder"], safe_address_position_2)
+        self.assertEqual(position_2["position"], 2)
+        self.assertEqual(position_2["totalPoints"], 200)
+        self.assertEqual(position_2["boost"], 1)
+        self.assertEqual(position_2["totalBoostedPoints"], 200)
+
+        # Should pass position 2 to 1
+        next_day = timezone.now().date() + timedelta(days=1)
+        period_3 = PeriodFactory(
+            campaign=campaign, start_date=next_day, end_date=next_day
+        )
+        ActivityFactory(
+            period=period_3,
+            address=safe_address_position_2,
+            total_points=200,
+            boost=2,
+            total_boosted_points=400,
+        )
+        response = self.client.get(
+            reverse("v1:locking_campaigns:leaderboard-campaign", args=(resource_id,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_json = response.json()
+        self.assertEqual(response_json["count"], 2)
+        first_position = response_json["results"][0]
+        self.assertEqual(first_position["holder"], safe_address_position_2)
+        self.assertEqual(first_position["position"], 1)
+        self.assertEqual(first_position["totalPoints"], 400)
+        self.assertEqual(first_position["boost"], 1.5)
+        self.assertEqual(first_position["totalBoostedPoints"], 600)

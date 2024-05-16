@@ -4,10 +4,11 @@ from io import TextIOWrapper
 from typing import IO
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import F, Max, Sum, Window
+from django.db.models.functions import RowNumber
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.db.models import Max, Sum
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
@@ -23,8 +24,7 @@ from safe_locking_service.locking_events.pagination import SmallPagination
 
 from . import tasks
 from .forms import FileUploadForm
-from .models import Campaign, Period
-from .models import Activity, Campaign
+from .models import Activity, Campaign, Period
 
 
 class CampaignsView(ListAPIView):
@@ -129,6 +129,7 @@ def process_activity_file(period: Period, file: IO[str]) -> None:
     activities_list = [row for row in reader]
     tasks.process_csv_task.delay(period.id, activities_list)
 
+
 class CampaignLeaderBoardView(ListAPIView):
     """
     Return the leaderboard for a provided campaign uuid
@@ -142,13 +143,19 @@ class CampaignLeaderBoardView(ListAPIView):
             Activity.objects.select_related("period__campaign")
             .filter(period__campaign__uuid=resource_id)
             .values("address")
-            .annotate(total_campaign_points=Sum("total_points"))
             .annotate(
-                last_boost=Activity.objects.select_related("period")
-                .values("boost")
-                .order_by("-period__end_date")
+                total_campaign_points=Sum("total_points"),
+                total_campaign_boosted_points=Sum("total_boosted_points"),
+                last_boost=F("total_campaign_boosted_points")
+                / F("total_campaign_points"),
             )
-            .annotate(total_campaign_boosted_points=Sum("total_boosted_points"))
+            .order_by(F("total_campaign_boosted_points").desc())
+            .annotate(
+                position=Window(
+                    expression=RowNumber(),
+                    order_by=F("total_campaign_boosted_points").desc(),
+                )
+            )
         )
 
     def list(self, request, *args, **kwargs):
