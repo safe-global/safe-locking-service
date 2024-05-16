@@ -38,6 +38,19 @@ class Campaign(models.Model):
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Campaign, self).save()
+
+    def clean(self):
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValidationError(
+                {
+                    "start_date": "Start date cannot be after end date",
+                    "end_date": "End date cannot be before start date",
+                }
+            )
+
     def __str__(self):
         return f"Campaign {self.uuid} {self.name}"
 

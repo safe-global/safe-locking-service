@@ -1,3 +1,4 @@
+from datetime import timedelta
 from random import randrange
 
 from django.utils import timezone
@@ -18,7 +19,7 @@ class CampaignFactory(DjangoModelFactory):
     name = FuzzyText(length=randrange(51))
     description = Faker("bs")
     start_date = LazyFunction(timezone.now)
-    end_date = LazyFunction(timezone.now)
+    end_date = LazyFunction(lambda: timezone.now() + timedelta(days=1))
 
 
 class PeriodFactory(DjangoModelFactory):
