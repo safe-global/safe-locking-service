@@ -16,7 +16,6 @@ class LeaderBoardCampaignRow(TypedDict):
     address: ChecksumAddress
     total_campaign_points: int
     total_campaign_boosted_points: Decimal
-    last_boost: Decimal
     position: int
 
 
@@ -97,10 +96,12 @@ class ActivityMetadata(models.Model):
     max_points = models.PositiveBigIntegerField()
 
 
-def get_campaign_leader_board_position(uuid, address: ChecksumAddress):
+def get_campaign_leader_board_position(
+    uuid: str, address: ChecksumAddress
+) -> LeaderBoardCampaignRow:
     """
 
-    :return:
+    :return: a Dict of LeaderBoardCampaignRow
     """
 
     query = """
@@ -108,7 +109,6 @@ def get_campaign_leader_board_position(uuid, address: ChecksumAddress):
     (SELECT "campaigns_activity"."address",
        SUM("campaigns_activity"."total_points") AS "total_campaign_points",
        SUM("campaigns_activity"."total_boosted_points") AS "total_campaign_boosted_points",
-       (SUM("campaigns_activity"."total_boosted_points") / SUM("campaigns_activity"."total_points")) AS "last_boost",
        ROW_NUMBER() OVER (ORDER BY SUM("campaigns_activity"."total_boosted_points") DESC) AS "position"
     FROM "campaigns_activity"
     INNER JOIN "campaigns_period"
@@ -117,7 +117,7 @@ def get_campaign_leader_board_position(uuid, address: ChecksumAddress):
     ON ("campaigns_period"."campaign_id" = "campaigns_campaign"."id")
     WHERE "campaigns_campaign"."uuid" = %s::uuid
     GROUP BY "campaigns_activity"."address"
-    ORDER BY 3 DESC) AS LEADERTABLE where address = %s;
+    ORDER BY "total_campaign_boosted_points" DESC) AS LEADERTABLE where address = %s;
     """
 
     with connection.cursor() as cursor:

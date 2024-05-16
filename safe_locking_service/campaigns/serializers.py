@@ -47,7 +47,11 @@ class CampaignLeaderBoardSerializer(serializers.Serializer):
         return obj["total_campaign_boosted_points"]
 
     def get_boost(self, obj: Dict):
-        return obj["last_boost"]
+        return (
+            obj["total_campaign_boosted_points"] / obj["total_campaign_points"]
+            if obj["total_campaign_points"]
+            else 0
+        )
 
     def get_total_points(self, obj: Dict):
         return obj["total_campaign_points"]
