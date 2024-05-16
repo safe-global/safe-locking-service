@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Activities upload for a Campaign</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Upload">
+</form>
+{% if error_message %}
+    <div class="error">
+      <strong>Error:</strong> {{ error_message }}
+    </div>
+  {% endif %}
+{% endblock %}

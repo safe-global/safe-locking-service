@@ -246,6 +246,10 @@ CELERY_ROUTES = (
             "safe_locking_service.locking_events.tasks.*",
             {"queue": "events"},
         ),
+        (
+            "safe_locking_service.campaigns.tasks.*",
+            {"queue": "default"},
+        ),
     ],
 )
 

@@ -1,4 +1,13 @@
+import csv
+import logging
+from io import TextIOWrapper
+from typing import IO
+
+from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Max
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
@@ -9,7 +18,9 @@ from rest_framework.response import Response
 from safe_locking_service.campaigns.serializers import CampaignSerializer
 from safe_locking_service.locking_events.pagination import SmallPagination
 
-from .models import Campaign
+from . import tasks
+from .forms import FileUploadForm
+from .models import Campaign, Period
 
 
 class CampaignsView(ListAPIView):
@@ -60,3 +71,56 @@ class RetrieveCampaignView(RetrieveAPIView):
 
         serializer = self.serializer_class(queryset[0])
         return Response(status=status.HTTP_200_OK, data=serializer.data)
+
+
+csv_headers = {
+    "safe_address",
+    "period_start",
+    "period_end",
+    "total_points",
+    "boost",
+    "total_boosted_points",
+    "points_rank",
+    "boosted_points_rank",
+}
+
+logger = logging.getLogger(__name__)
+
+
+@staff_member_required
+def upload_activities_view(request) -> HttpResponse:
+    if request.method == "POST":
+        form = FileUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                period = form.cleaned_data["period"]
+                file = TextIOWrapper(
+                    request.FILES["file"].file, encoding=request.encoding
+                )
+                process_activity_file(period, file)
+                return redirect(reverse("admin:index"))
+            except Exception as e:
+                logger.warning(e)
+                error_message = f"Invalid CSV format: {e}"
+                return render(
+                    request,
+                    "activities/upload.html",
+                    {"form": form, "error_message": error_message},
+                )
+
+    else:
+        form = FileUploadForm()
+    return render(request, "activities/upload.html", {"form": form})
+
+
+def process_activity_file(period: Period, file: IO[str]) -> None:
+    reader = csv.DictReader(file)
+
+    file_headers = reader.fieldnames
+    if not csv_headers.issubset(file_headers):
+        raise ValueError(
+            f"File does not include one or more of the following headers: {csv_headers}"
+        )
+
+    activities_list = [row for row in reader]
+    tasks.process_csv_task.delay(period.id, activities_list)
