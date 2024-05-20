@@ -12,7 +12,6 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
-from eth_typing import ChecksumAddress
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
@@ -140,7 +139,8 @@ class CampaignLeaderBoardView(ListAPIView):
     pagination_class = SmallPagination
     serializer_class = CampaignLeaderBoardSerializer
 
-    def get_queryset(self, resource_id: int):
+    def get_queryset(self):
+        resource_id = self.kwargs["resource_id"]
         return (
             Activity.objects.select_related("period__campaign")
             .filter(period__campaign__uuid=resource_id)
@@ -162,8 +162,7 @@ class CampaignLeaderBoardView(ListAPIView):
 
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def list(self, request, *args, **kwargs):
-        resource_id = kwargs["resource_id"]
-        queryset = self.get_queryset(resource_id)
+        queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         paginated_data = self.paginate_queryset(serializer.data)
         return self.get_paginated_response(paginated_data)
@@ -176,14 +175,14 @@ class CampaignLeaderBoardPositionView(RetrieveAPIView):
 
     serializer_class = CampaignLeaderBoardSerializer
 
-    def get_queryset(self, resource_id: int, address: ChecksumAddress):
+    def get_queryset(self):
+        resource_id = self.kwargs["resource_id"]
+        address = self.kwargs["address"]
         return get_campaign_leader_board_position(resource_id, address)
 
     @method_decorator(cache_page(1 * 60))  # 1 minute
-    def get(self, request, *args, **kwargs):
-        resource_id = kwargs["resource_id"]
-        address = kwargs["address"]
-        queryset = self.get_queryset(resource_id, address)
+    def get(self, *args, **kwargs):
+        queryset = self.get_queryset()
         if not queryset:
             return Response(
                 status=status.HTTP_404_NOT_FOUND,
