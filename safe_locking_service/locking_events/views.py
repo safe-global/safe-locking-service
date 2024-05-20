@@ -21,6 +21,7 @@ from safe_locking_service.locking_events.pagination import (
     SmallPagination,
 )
 from safe_locking_service.locking_events.serializers import (
+    AboutSerializer,
     AllEventsDocSerializer,
     LeaderBoardSerializer,
     LockEventSerializer,
@@ -35,17 +36,23 @@ class AboutView(GenericAPIView):
     Returns information and configuration of the service
     """
 
-    @method_decorator(cache_page(5 * 60))  # 5 minutes
-    def get(self, request, format=None):
-        content = {
+    serializer_class = AboutSerializer
+
+    def get_queryset(self):
+        return {
             "name": "Safe Locking Service",
             "version": __version__,
-            "api_version": request.version,
-            "secure": request.is_secure(),
-            "host": request.get_host(),
-            "headers": [x for x in request.META.keys() if "FORWARD" in x],
+            "api_version": self.request.version,
+            "secure": self.request.is_secure(),
+            "host": self.request.get_host(),
+            "headers": [x for x in self.request.META.keys() if "FORWARD" in x],
         }
-        return Response(content)
+
+    @method_decorator(cache_page(5 * 60))  # 5 minutes
+    def get(self, request, format=None):
+        serializer = self.serializer_class(data=self.get_queryset())
+        serializer.is_valid()
+        return Response(serializer.data)
 
 
 class AllEventsView(ListAPIView):

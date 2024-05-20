@@ -14,6 +14,15 @@ from safe_locking_service.locking_events.models import (
 from safe_locking_service.locking_events.services.locking_service import EventType
 
 
+class AboutSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    version = serializers.CharField()
+    api_version = serializers.CharField()
+    secure = serializers.BooleanField()
+    host = serializers.CharField()
+    headers = serializers.ListField()
+
+
 class EventTypeSerializer(serializers.Serializer):
     event_type = serializers.SerializerMethodField()
 
