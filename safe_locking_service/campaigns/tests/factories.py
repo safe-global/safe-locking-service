@@ -1,7 +1,10 @@
+from random import randrange
+
 from django.utils import timezone
 
 from factory import Faker, LazyFunction, SubFactory
 from factory.django import DjangoModelFactory
+from factory.fuzzy import FuzzyText
 
 from ..models import ActivityMetadata, Campaign, Period
 
@@ -10,7 +13,7 @@ class CampaignFactory(DjangoModelFactory):
     class Meta:
         model = Campaign
 
-    name = Faker("catch_phrase")
+    name = FuzzyText(length=randrange(51))
     description = Faker("bs")
     start_date = LazyFunction(timezone.now)
     end_date = LazyFunction(timezone.now)
