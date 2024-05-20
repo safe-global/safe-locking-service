@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Activity, Campaign, Period
+from .models import Activity, ActivityMetadata, Campaign, Period
 
 
 @admin.register(Campaign)
@@ -41,3 +41,19 @@ class ActivityAdmin(admin.ModelAdmin):
         "total_boosted_points",
     )
     search_fields = ("address",)
+
+
+@admin.register(ActivityMetadata)
+class ActivityMetadataAdmin(admin.ModelAdmin):
+    list_display = ("name", "campaign_name", "description", "max_points")
+    list_select_related = ("campaign",)
+    search_fields = ("name", "campaign__name")
+    fields = (
+        "campaign",
+        "name",
+        "description",
+        "max_points",
+    )
+
+    def campaign_name(self, obj):
+        return obj.campaign.name
