@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 from typing import List, TypedDict
 
+from django.core.exceptions import ValidationError
 from django.db import connection, models
 from django.db.backends.utils import CursorWrapper
 from django.utils.text import slugify
@@ -50,9 +51,19 @@ class Period(models.Model):
     end_date = models.DateField()
 
     def save(self, *args, **kwargs):
+        self.full_clean()
         if not self.slug:
             self.slug = slugify(f"{self.start_date}-{self.end_date}")
         super(Period, self).save(*args, **kwargs)
+
+    def clean(self):
+        if self.start_date > self.end_date:
+            raise ValidationError(
+                {
+                    "start_date": "Start date cannot be after end date",
+                    "end_date": "End date cannot be before start date",
+                }
+            )
 
     class Meta:
         constraints = [
