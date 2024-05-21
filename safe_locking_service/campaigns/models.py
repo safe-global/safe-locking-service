@@ -6,9 +6,11 @@ from django.core.exceptions import ValidationError
 from django.db import connection, models
 from django.db.backends.utils import CursorWrapper
 from django.utils.text import slugify
+
 from eth_typing import ChecksumAddress
-from gnosis.eth.django.models import EthereumAddressV2Field
 from hexbytes import HexBytes
+
+from gnosis.eth.django.models import EthereumAddressV2Field
 
 
 class LeaderBoardCampaignRow(TypedDict):
@@ -49,6 +51,7 @@ class Period(models.Model):
     end_date = models.DateField()
 
     def save(self, *args, **kwargs):
+        self.full_clean()
         if not self.slug:
             self.slug = slugify(f"{self.start_date}-{self.end_date}")
         super(Period, self).save(*args, **kwargs)
@@ -105,7 +108,7 @@ class ActivityMetadata(models.Model):
 
 
 def get_campaign_leader_board_position(
-        uuid: str, address: ChecksumAddress
+    uuid: str, address: ChecksumAddress
 ) -> LeaderBoardCampaignRow:
     """
 

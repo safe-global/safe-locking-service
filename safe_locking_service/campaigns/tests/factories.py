@@ -1,9 +1,10 @@
 from random import randrange
 
 from django.utils import timezone
+from django.utils.text import slugify
 
 from eth_account import Account
-from factory import Faker, LazyFunction, SubFactory
+from factory import Faker, LazyAttribute, LazyFunction, SubFactory
 from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyText
 
@@ -27,6 +28,7 @@ class PeriodFactory(DjangoModelFactory):
     campaign = SubFactory(CampaignFactory)
     start_date = LazyFunction(lambda: timezone.now().date())
     end_date = LazyFunction(lambda: timezone.now().date())
+    slug = LazyAttribute(lambda p: slugify(f"{p.start_date}-{p.end_date}"))
 
 
 class ActivityFactory(DjangoModelFactory):

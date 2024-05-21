@@ -55,7 +55,7 @@ class PeriodTestCase(TestCase):
         start_date = fake.future_date()
         end_date = fake.past_date()
 
-        period = PeriodFactory(end_date=end_date, start_date=start_date)
+        period = PeriodFactory.build(end_date=end_date, start_date=start_date)
 
         with self.assertRaises(ValidationError):
-            period.full_clean()
+            period.save()
