@@ -1,12 +1,12 @@
 import csv
 import logging
 from io import TextIOWrapper
-from typing import IO
+from typing import IO, Optional
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import F, Max, Sum, Window
 from django.db.models.functions import Rank
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -93,9 +93,11 @@ logger = logging.getLogger(__name__)
 
 
 @staff_member_required
-def upload_activities_view(request) -> HttpResponse:
+def upload_activities_view(request: HttpRequest) -> HttpResponse:
+    period_slug: Optional[str] = request.GET.get("period_slug")
+
     if request.method == "POST":
-        form = FileUploadForm(request.POST, request.FILES)
+        form = FileUploadForm(request.POST, request.FILES, period_slug=period_slug)
         if form.is_valid():
             try:
                 period = form.cleaned_data["period"]
@@ -114,7 +116,7 @@ def upload_activities_view(request) -> HttpResponse:
                 )
 
     else:
-        form = FileUploadForm()
+        form = FileUploadForm(period_slug=period_slug)
     return render(request, "activities/upload.html", {"form": form})
 
 
