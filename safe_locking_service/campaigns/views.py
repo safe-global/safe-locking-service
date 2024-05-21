@@ -4,7 +4,8 @@ from io import TextIOWrapper
 from typing import IO
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Max
+from django.db.models import F, Max, Sum, Window
+from django.db.models.functions import Rank
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -15,12 +16,16 @@ from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 
-from safe_locking_service.campaigns.serializers import CampaignSerializer
+from safe_locking_service.campaigns.models import get_campaign_leader_board_position
+from safe_locking_service.campaigns.serializers import (
+    CampaignLeaderBoardSerializer,
+    CampaignSerializer,
+)
 from safe_locking_service.locking_events.pagination import SmallPagination
 
 from . import tasks
 from .forms import FileUploadForm
-from .models import Campaign, Period
+from .models import Activity, Campaign, Period
 
 
 class CampaignsView(ListAPIView):
@@ -124,3 +129,64 @@ def process_activity_file(period: Period, file: IO[str]) -> None:
 
     activities_list = [row for row in reader]
     tasks.process_csv_task.delay(period.id, activities_list)
+
+
+class CampaignLeaderBoardView(ListAPIView):
+    """
+    Return the leaderboard for a provided campaign uuid
+    """
+
+    pagination_class = SmallPagination
+    serializer_class = CampaignLeaderBoardSerializer
+
+    def get_queryset(self):
+        resource_id = self.kwargs["resource_id"]
+        return (
+            Activity.objects.select_related("period__campaign")
+            .filter(period__campaign__uuid=resource_id)
+            .values("address")
+            .annotate(
+                total_campaign_points=Sum("total_points"),
+                total_campaign_boosted_points=Sum("total_boosted_points"),
+                last_boost=F("total_campaign_boosted_points")
+                / F("total_campaign_points"),
+            )
+            .order_by(F("total_campaign_boosted_points").desc())
+            .annotate(
+                position=Window(
+                    expression=Rank(),
+                    order_by=F("total_campaign_boosted_points").desc(),
+                )
+            )
+        )
+
+    @method_decorator(cache_page(1 * 60))  # 1 minute
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        paginated_data = self.paginate_queryset(serializer.data)
+        return self.get_paginated_response(paginated_data)
+
+
+class CampaignLeaderBoardPositionView(RetrieveAPIView):
+    """
+    Return the leaderboard for a provided campaign uuid and address
+    """
+
+    serializer_class = CampaignLeaderBoardSerializer
+
+    def get_queryset(self):
+        resource_id = self.kwargs["resource_id"]
+        address = self.kwargs["address"]
+        return get_campaign_leader_board_position(resource_id, address)
+
+    @method_decorator(cache_page(1 * 60))  # 1 minute
+    def get(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset:
+            return Response(
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = self.serializer_class(queryset)
+        return Response(status=status.HTTP_200_OK, data=serializer.data)

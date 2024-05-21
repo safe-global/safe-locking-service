@@ -13,4 +13,14 @@ urlpatterns = [
         views.RetrieveCampaignView.as_view(),
         name="retrieve-campaign",
     ),
+    path(
+        "<str:resource_id>/leaderboard/",
+        views.CampaignLeaderBoardView.as_view(),
+        name="leaderboard-campaign",
+    ),
+    path(
+        "<str:resource_id>/leaderboard/<str:address>/",
+        views.CampaignLeaderBoardPositionView.as_view(),
+        name="leaderboard-campaign-position",
+    ),
 ]

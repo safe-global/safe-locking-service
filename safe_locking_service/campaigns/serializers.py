@@ -1,4 +1,8 @@
+from typing import Dict
+
 from rest_framework import serializers
+
+from gnosis.eth.utils import fast_to_checksum_address
 
 from safe_locking_service.campaigns.models import Campaign
 
@@ -25,3 +29,29 @@ class CampaignSerializer(serializers.Serializer):
 
     def get_last_updated(self, obj: Campaign):
         return obj.last_updated
+
+
+class CampaignLeaderBoardSerializer(serializers.Serializer):
+    holder = serializers.SerializerMethodField()
+    position = serializers.IntegerField()
+    boost = serializers.SerializerMethodField()
+    total_points = serializers.SerializerMethodField()
+    total_boosted_points = serializers.SerializerMethodField()
+
+    def get_holder(self, obj: Dict):
+        if isinstance(obj["address"], str):
+            return obj["address"]
+        return fast_to_checksum_address(bytes(obj["address"]))
+
+    def get_total_boosted_points(self, obj: Dict):
+        return obj["total_campaign_boosted_points"]
+
+    def get_boost(self, obj: Dict):
+        return (
+            obj["total_campaign_boosted_points"] / obj["total_campaign_points"]
+            if obj["total_campaign_points"]
+            else 0
+        )
+
+    def get_total_points(self, obj: Dict):
+        return obj["total_campaign_points"]
