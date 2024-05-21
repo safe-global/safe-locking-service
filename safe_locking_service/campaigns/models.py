@@ -120,7 +120,7 @@ def get_campaign_leader_board_position(
     (SELECT "campaigns_activity"."address",
        SUM("campaigns_activity"."total_points") AS "total_campaign_points",
        SUM("campaigns_activity"."total_boosted_points") AS "total_campaign_boosted_points",
-       ROW_NUMBER() OVER (ORDER BY SUM("campaigns_activity"."total_boosted_points") DESC) AS "position"
+       RANK() OVER (ORDER BY SUM("campaigns_activity"."total_boosted_points") DESC) AS "position"
     FROM "campaigns_activity"
     INNER JOIN "campaigns_period"
     ON ("campaigns_activity"."period_id" = "campaigns_period"."id")

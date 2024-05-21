@@ -340,6 +340,66 @@ class TestActivitiesUploadView(TestCase):
         self.assertEqual(first_position["boost"], 1.5)
         self.assertEqual(first_position["totalBoostedPoints"], 600)
 
+    def test_rank_of_leaderboard_campaigns_view(self):
+        campaign = CampaignFactory()
+        period_1 = PeriodFactory(campaign=campaign)
+        # Because will have the same totalBoostedPoints will be ordered by address.
+        safe_address_position_1 = "0x71E4B15483d3FFd1099C0284799Ce7b1dcd1563d"
+        safe_address_other_position_1 = "0xE05f244ddEC210b2789f34292Aa5335f934683B2"
+        safe_address_position_3 = Account.create().address
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_1,
+            total_points=200,
+            boost=1,
+            total_boosted_points=200,
+        )
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_other_position_1,
+            total_points=200,
+            boost=1,
+            total_boosted_points=200,
+        )
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_3,
+            total_points=50,
+            boost=1,
+            total_boosted_points=50,
+        )
+
+        resource_id = campaign.uuid
+        response = self.client.get(
+            reverse("v1:locking_campaigns:leaderboard-campaign", args=(resource_id,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # No campaigns
+        response_json = response.json()
+        self.assertEqual(response_json["count"], 3)
+
+        position_1 = response_json["results"][0]
+        self.assertEqual(position_1["holder"], safe_address_position_1)
+        self.assertEqual(position_1["position"], 1)
+        self.assertEqual(position_1["totalPoints"], 200)
+        self.assertEqual(position_1["boost"], 1)
+        self.assertEqual(position_1["totalBoostedPoints"], 200)
+
+        other_position_1 = response_json["results"][1]
+        self.assertEqual(other_position_1["holder"], safe_address_other_position_1)
+        self.assertEqual(other_position_1["position"], 1)
+        self.assertEqual(other_position_1["totalPoints"], 200)
+        self.assertEqual(other_position_1["boost"], 1)
+        self.assertEqual(other_position_1["totalBoostedPoints"], 200)
+
+        position_3 = response_json["results"][2]
+        self.assertEqual(position_3["holder"], safe_address_position_3)
+        self.assertEqual(position_3["position"], 3)
+        self.assertEqual(position_3["totalPoints"], 50)
+        self.assertEqual(position_3["boost"], 1)
+        self.assertEqual(position_3["totalBoostedPoints"], 50)
+
     def test_leaderboard_campaign_position_view(self):
         # Should return 404 error
         response = self.client.get(
@@ -416,3 +476,78 @@ class TestActivitiesUploadView(TestCase):
         self.assertEqual(position_2["totalPoints"], 200)
         self.assertEqual(position_2["boost"], 1)
         self.assertEqual(position_2["totalBoostedPoints"], 200)
+
+    def test_rank_of_leaderboard_campaign_position_view(self):
+        # Test that we are using rank
+        safe_address_position_1 = Account.create().address
+        safe_address_other_position_1 = Account.create().address
+        safe_address_position_3 = Account.create().address
+        campaign = CampaignFactory()
+        resource_id = campaign.uuid
+        period_1 = PeriodFactory(campaign=campaign)
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_1,
+            total_points=200,
+            boost=1,
+            total_boosted_points=200,
+        )
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_other_position_1,
+            total_points=200,
+            boost=1,
+            total_boosted_points=200,
+        )
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_3,
+            total_points=50,
+            boost=1,
+            total_boosted_points=50,
+        )
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:leaderboard-campaign-position",
+                args=(resource_id, safe_address_position_1),
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        position_1 = response.json()
+        self.assertEqual(position_1["holder"], safe_address_position_1)
+        self.assertEqual(position_1["position"], 1)
+        self.assertEqual(position_1["totalPoints"], 200)
+        self.assertEqual(position_1["boost"], 1)
+        self.assertEqual(position_1["totalBoostedPoints"], 200)
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:leaderboard-campaign-position",
+                args=(resource_id, safe_address_other_position_1),
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        position_1 = response.json()
+        self.assertEqual(position_1["holder"], safe_address_other_position_1)
+        self.assertEqual(position_1["position"], 1)
+        self.assertEqual(position_1["totalPoints"], 200)
+        self.assertEqual(position_1["boost"], 1)
+        self.assertEqual(position_1["totalBoostedPoints"], 200)
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:leaderboard-campaign-position",
+                args=(resource_id, safe_address_position_3),
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        position_1 = response.json()
+        self.assertEqual(position_1["holder"], safe_address_position_3)
+        self.assertEqual(position_1["position"], 3)
+        self.assertEqual(position_1["totalPoints"], 50)
+        self.assertEqual(position_1["boost"], 1)
+        self.assertEqual(position_1["totalBoostedPoints"], 50)
