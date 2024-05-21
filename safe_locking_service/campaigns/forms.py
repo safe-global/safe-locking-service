@@ -13,7 +13,7 @@ class FileUploadForm(forms.Form):
     def __init__(self, *args, **kwargs):
         period_slug = kwargs.pop("period_slug", None)
         super().__init__(*args, **kwargs)
-        if period_slug is not None:
+        if period_slug:
             self.fields["period"].queryset = Period.objects.filter(slug=period_slug)
             self.fields["period"].empty_label = None
         else:

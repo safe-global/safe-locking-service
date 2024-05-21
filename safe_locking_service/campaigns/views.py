@@ -6,12 +6,12 @@ from typing import IO, Optional
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import F, Max, Sum, Window
 from django.db.models.functions import Rank
-from django.http import HttpRequest
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
@@ -22,6 +22,7 @@ from safe_locking_service.campaigns.serializers import (
     CampaignSerializer,
 )
 from safe_locking_service.locking_events.pagination import SmallPagination
+
 from . import tasks
 from .forms import FileUploadForm
 from .models import Activity, Campaign, Period
@@ -150,7 +151,7 @@ class CampaignLeaderBoardView(ListAPIView):
                 total_campaign_points=Sum("total_points"),
                 total_campaign_boosted_points=Sum("total_boosted_points"),
                 last_boost=F("total_campaign_boosted_points")
-                           / F("total_campaign_points"),
+                / F("total_campaign_points"),
             )
             .order_by(F("total_campaign_boosted_points").desc())
             .annotate(
