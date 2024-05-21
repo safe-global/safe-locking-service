@@ -237,7 +237,7 @@ class TestActivitiesUploadView(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertTrue(
             response.context.get("error_message").startswith(
-                "Invalid CSV format: File does not include one or more of the following headers:"
+                "Error processing CSV: File does not include one or more of the following headers:"
             )
         )
 

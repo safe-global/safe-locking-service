@@ -108,7 +108,7 @@ def upload_activities_view(request: HttpRequest) -> HttpResponse:
                 return redirect(reverse("admin:index"))
             except Exception as e:
                 logger.warning(e)
-                error_message = f"Invalid CSV format: {e}"
+                error_message = f"Error processing CSV: {e}"
                 return render(
                     request,
                     "activities/upload.html",
