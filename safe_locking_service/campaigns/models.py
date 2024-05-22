@@ -64,9 +64,9 @@ class Period(models.Model):
     end_date = models.DateField()
 
     def save(self, *args, **kwargs):
-        self.full_clean()
         if not self.slug:
             self.slug = slugify(f"{self.start_date}-{self.end_date}")
+        self.full_clean()
         super(Period, self).save(*args, **kwargs)
 
     def clean(self):
