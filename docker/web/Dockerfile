@@ -30,9 +30,15 @@ RUN groupadd -g 999 python && \
     useradd -u 999 -r -g python python && \
     mkdir -p /nginx && \
     chown -R python:python /nginx ${APP_HOME}
-COPY --chown=python:python . .
+#COPY --chown=python:python . .
+COPY --chown=python:python config config
+COPY --chown=python:python manage.py manage.py
+COPY --chown=python:python safe_locking_service safe_locking_service
+COPY --chown=python:python docker/web/run_web.sh docker-entrypoint.sh
+COPY --chown=python:python gunicorn.conf.py gunicorn.conf.py
+COPY --chown=python:python gunicorn_custom_workers.py gunicorn_custom_workers.py
 
 # Use numeric ids so kubernetes identifies the user correctly
 USER 999:999
 
-RUN DJANGO_SETTINGS_MODULE=config.settings.production DJANGO_DOT_ENV_FILE=.env.docker python manage.py collectstatic --noinput
+ENTRYPOINT ["./docker-entrypoint.sh"]

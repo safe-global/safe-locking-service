@@ -20,7 +20,7 @@ services:
       context: .
       dockerfile: docker/web/Dockerfile
     env_file:
-      - .env
+      - .env.docker
     working_dir: /app
     ports:
       - "8888:8888"
