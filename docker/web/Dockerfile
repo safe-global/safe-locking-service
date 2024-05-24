@@ -35,4 +35,5 @@ COPY --chown=python:python . .
 # Use numeric ids so kubernetes identifies the user correctly
 USER 999:999
 
-RUN DJANGO_SETTINGS_MODULE=config.settings.production DJANGO_DOT_ENV_FILE=.env.docker python manage.py collectstatic --noinput
+#RUN DJANGO_SETTINGS_MODULE=config.settings.production DJANGO_DOT_ENV_FILE=.env.docker python manage.py collectstatic --noinput
+ENTRYPOINT ["./docker/web/run_web.sh"]
