@@ -1,5 +1,6 @@
 -r requirements.txt
 -r requirements-test.txt
+black==24.4.2
 flake8
 ipdb
 ipython
