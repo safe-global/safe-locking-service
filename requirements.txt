@@ -19,6 +19,6 @@ gunicorn[gevent]==22.0.0
 hexbytes==0.3.1
 packaging>=21
 psycopg2==2.9.9
-requests==2.31.0
+requests==2.32.3
 safe-eth-py[django]==6.0.0b29
 web3==6.19.0
