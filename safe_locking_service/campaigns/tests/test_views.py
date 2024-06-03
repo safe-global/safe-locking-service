@@ -20,6 +20,7 @@ from ...campaigns.tests.factories import (
 )
 from ...utils.timestamp_helper import get_formated_timestamp
 from ..forms import FileUploadForm
+from ..management.commands.update_leaderboard_view import update_leaderboard_view
 from ..models import Period
 from .csv_factory import CSVFactory
 from .factories import PeriodFactory
@@ -459,6 +460,9 @@ class TestActivitiesUploadView(TestCase):
             total_boosted_points=100,
         )
         resource_id = campaign.uuid
+        # Refresh materialized view
+        update_leaderboard_view()
+
         response = self.client.get(
             reverse(
                 "v1:locking_campaigns:leaderboard-campaign-position",
@@ -516,6 +520,8 @@ class TestActivitiesUploadView(TestCase):
             boost=1,
             total_boosted_points=50,
         )
+        # Refresh materialized view
+        update_leaderboard_view()
 
         response = self.client.get(
             reverse(

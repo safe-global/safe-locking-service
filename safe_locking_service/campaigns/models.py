@@ -132,19 +132,7 @@ def get_campaign_leader_board_position(
     """
 
     query = """
-    Select * FROM
-    (SELECT "campaigns_activity"."address",
-       SUM("campaigns_activity"."total_points") AS "total_campaign_points",
-       SUM("campaigns_activity"."total_boosted_points") AS "total_campaign_boosted_points",
-       RANK() OVER (ORDER BY SUM("campaigns_activity"."total_boosted_points") DESC) AS "position"
-    FROM "campaigns_activity"
-    INNER JOIN "campaigns_period"
-    ON ("campaigns_activity"."period_id" = "campaigns_period"."id")
-    INNER JOIN "campaigns_campaign"
-    ON ("campaigns_period"."campaign_id" = "campaigns_campaign"."id")
-    WHERE "campaigns_campaign"."uuid" = %s::uuid
-    GROUP BY "campaigns_activity"."address"
-    ORDER BY "total_campaign_boosted_points" DESC) AS LEADERTABLE where address = %s;
+    SELECT * FROM campaign_leaderboards WHERE campaign_uuid=%s AND address=%s
     """
 
     with connection.cursor() as cursor:
