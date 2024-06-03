@@ -2,7 +2,8 @@ import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -19,6 +20,7 @@ from ...campaigns.tests.factories import (
 )
 from ...utils.timestamp_helper import get_formated_timestamp
 from ..forms import FileUploadForm
+from ..models import Period
 from .csv_factory import CSVFactory
 from .factories import PeriodFactory
 
@@ -176,9 +178,17 @@ class TestCampaignViews(TestCase):
 class TestActivitiesUploadView(TestCase):
     def setUp(self):
         self.client = Client()
-        self.admin_user = User.objects.create_superuser(
-            "admin", "admin@example.com", "adminpass"
+        # Create a normal user
+        self.user = User.objects.create_user("admin", "admin@example.com", "adminpass")
+        # Allow the User to login (staff)
+        self.user.is_staff = True
+        self.user.save()
+        # Add permission to upload activities for this user
+        content_type = ContentType.objects.get_for_model(Period)
+        permission = Permission.objects.get(
+            codename="upload_activities", content_type=content_type
         )
+        self.user.user_permissions.add(permission)
         self.client.login(username="admin", password="adminpass")
         self.period = PeriodFactory()
 
@@ -551,3 +561,37 @@ class TestActivitiesUploadView(TestCase):
         self.assertEqual(position_1["totalPoints"], 50)
         self.assertEqual(position_1["boost"], 1)
         self.assertEqual(position_1["totalBoostedPoints"], 50)
+
+
+class TestActivitiesUploadViewNoPermissions(TestCase):
+    def setUp(self):
+        self.client = Client()
+        # Create a normal user
+        self.user = User.objects.create_user("admin", "admin@example.com", "adminpass")
+        # Allow the User to login (staff)
+        self.user.is_staff = True
+        self.user.save()
+        self.client.login(username="admin", password="adminpass")
+        self.period = PeriodFactory()
+
+    @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
+    def test_form_retrieval_returns_403(self, task_mock):
+        response = self.client.get(reverse("v1:campaigns:activities_upload"))
+
+        task_mock.assert_not_called()
+        self.assertEqual(403, response.status_code)
+
+    @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
+    def test_valid_activities_upload_returns_403(self, task_mock):
+        csv_content = CSVFactory().create()
+        upload = SimpleUploadedFile(
+            "testfile.csv", csv_content.encode("utf-8"), content_type="text/csv"
+        )
+
+        response = self.client.post(
+            reverse("v1:campaigns:activities_upload"),
+            {"file": upload, "period": self.period.id},
+        )
+
+        task_mock.assert_not_called()
+        self.assertEqual(403, response.status_code)
