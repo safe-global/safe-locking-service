@@ -179,7 +179,7 @@ class TestActivitiesUploadView(TestCase):
     def setUp(self):
         self.client = Client()
         # Create a normal user
-        self.user = User.objects.create_user("admin", "admin@example.com", "adminpass")
+        self.user = User.objects.create_user("user", "user@example.com", "userpass")
         # Allow the User to login (staff)
         self.user.is_staff = True
         self.user.save()
@@ -189,7 +189,7 @@ class TestActivitiesUploadView(TestCase):
             codename="upload_activities", content_type=content_type
         )
         self.user.user_permissions.add(permission)
-        self.client.login(username="admin", password="adminpass")
+        self.client.login(username="user", password="userpass")
         self.period = PeriodFactory()
 
     @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
@@ -567,11 +567,11 @@ class TestActivitiesUploadViewNoPermissions(TestCase):
     def setUp(self):
         self.client = Client()
         # Create a normal user
-        self.user = User.objects.create_user("admin", "admin@example.com", "adminpass")
+        self.user = User.objects.create_user("user", "user@example.com", "userpass")
         # Allow the User to login (staff)
         self.user.is_staff = True
         self.user.save()
-        self.client.login(username="admin", password="adminpass")
+        self.client.login(username="user", password="userpass")
         self.period = PeriodFactory()
 
     @patch("safe_locking_service.campaigns.tasks.process_csv_task.delay")
