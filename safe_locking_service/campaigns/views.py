@@ -4,6 +4,7 @@ from io import TextIOWrapper
 from typing import IO, Optional
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import permission_required
 from django.db.models import F, Max, Sum, Window
 from django.db.models.functions import Rank
 from django.http import HttpRequest, HttpResponse
@@ -92,7 +93,9 @@ csv_headers = {
 logger = logging.getLogger(__name__)
 
 
+# We keep the login_required decorator so that the user can log in first if they haven't done so
 @staff_member_required
+@permission_required("campaigns.upload_activities", raise_exception=True)
 def upload_activities_view(request: HttpRequest) -> HttpResponse:
     period_slug: Optional[str] = request.GET.get("period_slug")
 

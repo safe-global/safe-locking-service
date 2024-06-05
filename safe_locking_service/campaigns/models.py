@@ -84,6 +84,9 @@ class Period(models.Model):
                 fields=["campaign", "end_date"], name="unique_period"
             )
         ]
+        permissions = [
+            ("upload_activities", "Can upload activities for the given period")
+        ]
 
     def __str__(self):
         return f"{self.campaign} – Period {self.slug}"
