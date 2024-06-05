@@ -8,6 +8,18 @@ on:
   release:
     types: [ released ]
 
+concurrency:
+  # Each run is grouped as follows:
+  # - Each branch has its own group (per workflow)
+  # - Each PR has its own group (per workflow)
+  # - Each tag has its own group (per workflow)
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # github.head_ref is only available when the event is of type pull_request or pull_request_target
+  # Here we just need it's truthy value i.e., if there is a head_ref then the value is true. The value is false otherwise.
+  # This means that non-PR runs should not cancel previous runs in the same group (example: tag creation, main branch)
+  # See https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
+  cancel-in-progress: ${{ github.head_ref && true || false }}
+
 jobs:
   linting:
     runs-on: ubuntu-latest
