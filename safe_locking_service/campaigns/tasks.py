@@ -65,7 +65,7 @@ def process_csv_task(period_id: int, activities_list: list[dict[str, Any]]) -> N
 
             for start in range(0, len(activities), BATCH_SIZE):
                 Activity.objects.bulk_create(activities[start : start + BATCH_SIZE])
-            logger.debug("Updating Leaderboard View")
+            logger.info("Updating Leaderboard View")
             update_leaderboard_view()
             logger.info("Leaderboard View updated")
             logger.info("All activities created for period: %s", period.slug)
