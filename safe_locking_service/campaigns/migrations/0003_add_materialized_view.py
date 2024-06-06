@@ -2,10 +2,7 @@
 
 from django.db import migrations
 
-from ..management.commands.update_leaderboard_view import (
-    MATERIALIZED_VIEW_SQL,
-    MATERIALIZED_VIEW_TABLE_NAME,
-)
+from ..management.commands.refresh_leaderboard_view import MATERIALIZED_VIEW_TABLE_NAME
 
 
 class Migration(migrations.Migration):
@@ -15,7 +12,20 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            sql=MATERIALIZED_VIEW_SQL,
+            sql=f"""
+            CREATE MATERIALIZED VIEW IF NOT EXISTS {MATERIALIZED_VIEW_TABLE_NAME} AS
+            SELECT "campaigns_activity"."address",
+                   "campaigns_campaign"."uuid"                      AS "campaign_uuid",
+                   SUM("campaigns_activity"."total_points")         AS "total_campaign_points",
+                   SUM("campaigns_activity"."total_boosted_points") AS "total_campaign_boosted_points",
+                   RANK() OVER (PARTITION BY "campaigns_campaign"."uuid" ORDER BY SUM("campaigns_activity"."total_boosted_points") DESC) AS "position"
+            FROM "campaigns_activity"
+                     INNER JOIN "campaigns_period" ON "campaigns_activity"."period_id" = "campaigns_period"."id"
+                     INNER JOIN "campaigns_campaign" ON "campaigns_period"."campaign_id" = "campaigns_campaign"."id"
+            GROUP BY "campaigns_activity"."address", "campaigns_campaign"."uuid";
+
+            CREATE UNIQUE INDEX IF NOT EXISTS leaderboard_address_position ON {MATERIALIZED_VIEW_TABLE_NAME} (address, campaign_uuid);
+            """,
             reverse_sql=f"DROP MATERIALIZED VIEW IF EXISTS {MATERIALIZED_VIEW_TABLE_NAME};",
         )
     ]

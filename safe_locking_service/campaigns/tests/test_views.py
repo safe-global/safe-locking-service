@@ -20,7 +20,7 @@ from ...campaigns.tests.factories import (
 )
 from ...utils.timestamp_helper import get_formated_timestamp
 from ..forms import FileUploadForm
-from ..management.commands.update_leaderboard_view import update_leaderboard_view
+from ..management.commands.refresh_leaderboard_view import update_leaderboard_view
 from ..models import Period
 from .csv_factory import CSVFactory
 from .factories import PeriodFactory

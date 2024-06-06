@@ -6,7 +6,7 @@ from django.db import transaction
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
-from .management.commands.update_leaderboard_view import update_leaderboard_view
+from .management.commands.refresh_leaderboard_view import update_leaderboard_view
 from .models import Activity, Period
 
 BATCH_SIZE = 1000
