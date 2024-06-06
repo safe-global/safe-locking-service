@@ -33,7 +33,7 @@ MATERIALIZED_VIEW_SQL = f"""
 
 
 class Command(BaseCommand):
-    help = "Update the leaderboard view for a campaign"
+    help = "Update the leaderboard view for all campaigns"
 
     def handle(self, *args, **kwargs):
         """
