@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import permission_required
 from django.db.models import F, Max, Sum, Window
 from django.db.models.functions import Rank
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -21,6 +21,7 @@ from safe_locking_service.campaigns.models import get_campaign_leader_board_posi
 from safe_locking_service.campaigns.serializers import (
     CampaignLeaderBoardSerializer,
     CampaignSerializer,
+    PeriodAddressSerializer,
 )
 from safe_locking_service.locking_events.pagination import SmallPagination
 
@@ -195,3 +196,30 @@ class CampaignLeaderBoardPositionView(RetrieveAPIView):
 
         serializer = self.serializer_class(queryset)
         return Response(status=status.HTTP_200_OK, data=serializer.data)
+
+
+class GetAddressPeriodsView(ListAPIView):
+    pagination_class = SmallPagination
+    serializer_class = PeriodAddressSerializer
+
+    def get_queryset(self):
+        resource_id = self.kwargs["resource_id"]
+        address = self.request.GET.get("holder")
+
+        campaign = get_object_or_404(Campaign, uuid=resource_id)
+
+        if address:
+            queryset = Activity.objects.filter(
+                period__campaign=campaign, address=address
+            )
+        else:
+            queryset = Activity.objects.filter(period__campaign=campaign)
+
+        return queryset.select_related("period").order_by("-period__start_date")
+
+    def get(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        paginated_data = self.paginate_queryset(serializer.data)
+
+        return self.get_paginated_response(paginated_data)

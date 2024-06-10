@@ -55,3 +55,18 @@ class CampaignLeaderBoardSerializer(serializers.Serializer):
 
     def get_total_points(self, obj: Dict):
         return obj["total_campaign_points"]
+
+
+class PeriodAddressSerializer(serializers.Serializer):
+    start_date = serializers.SerializerMethodField()
+    end_date = serializers.SerializerMethodField()
+    holder = serializers.CharField(source="address")
+    boost = serializers.CharField()
+    total_points = serializers.CharField()
+    total_boosted_points = serializers.CharField()
+
+    def get_start_date(self, obj):
+        return obj.period.start_date
+
+    def get_end_date(self, obj):
+        return obj.period.end_date
