@@ -6,6 +6,7 @@ from django.db import transaction
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
+from .management.commands.refresh_leaderboard_view import update_leaderboard_view
 from .models import Activity, Period
 
 BATCH_SIZE = 1000
@@ -64,7 +65,9 @@ def process_csv_task(period_id: int, activities_list: list[dict[str, Any]]) -> N
 
             for start in range(0, len(activities), BATCH_SIZE):
                 Activity.objects.bulk_create(activities[start : start + BATCH_SIZE])
-
+            logger.info("Updating Leaderboard View")
+            update_leaderboard_view()
+            logger.info("Leaderboard View updated")
             logger.info("All activities created for period: %s", period.slug)
     except Exception as e:
         logger.error("Failed to process CSV for period ID %s: %s", period_id, str(e))
