@@ -1,9 +1,12 @@
+import random
 from datetime import timedelta
+from decimal import Decimal
 from random import randrange
 
 from django.utils import timezone
 from django.utils.text import slugify
 
+import factory
 from eth_account import Account
 from factory import Faker, LazyAttribute, LazyFunction, SubFactory
 from factory.django import DjangoModelFactory
@@ -32,6 +35,13 @@ class PeriodFactory(DjangoModelFactory):
     slug = LazyAttribute(lambda p: slugify(f"{p.start_date}-{p.end_date}"))
 
 
+def generate_random_decimal(
+    min_value: int = 0, max_value: int = 1000, decimal_places: int = 2
+) -> Decimal:
+    value = Decimal(random.uniform(min_value, max_value))
+    return round(value, decimal_places)
+
+
 class ActivityFactory(DjangoModelFactory):
     class Meta:
         model = Activity
@@ -39,8 +49,14 @@ class ActivityFactory(DjangoModelFactory):
     period = SubFactory(PeriodFactory)
     address = LazyFunction(lambda: Account.create().address)
     total_points = Faker("pyint")
-    boost = Faker("pyint")
-    total_boosted_points = Faker("pyint")
+
+    @factory.lazy_attribute
+    def boost(self):
+        return generate_random_decimal(decimal_places=8)
+
+    @factory.lazy_attribute
+    def total_boosted_points(self):
+        return generate_random_decimal(decimal_places=8)
 
 
 class ActivityMetadataFactory(DjangoModelFactory):
