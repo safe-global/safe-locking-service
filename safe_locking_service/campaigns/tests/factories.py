@@ -39,8 +39,10 @@ class ActivityFactory(DjangoModelFactory):
     period = SubFactory(PeriodFactory)
     address = LazyFunction(lambda: Account.create().address)
     total_points = Faker("pyint")
-    boost = Faker("pyint")
-    total_boosted_points = Faker("pyint")
+    boost = Faker("pydecimal", left_digits=7, right_digits=8, positive=True)
+    total_boosted_points = Faker(
+        "pydecimal", left_digits=7, right_digits=8, positive=True
+    )
 
 
 class ActivityMetadataFactory(DjangoModelFactory):
