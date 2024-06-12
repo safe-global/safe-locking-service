@@ -601,3 +601,212 @@ class TestActivitiesUploadViewNoPermissions(TestCase):
 
         task_mock.assert_not_called()
         self.assertEqual(403, response.status_code)
+
+
+class TestGetAddressPeriodsView(TestCase):
+    def test_empty_periods_view(self):
+        campaign = CampaignFactory.create()
+        holder = Account.create().address
+
+        response = self.client.get(
+            reverse("v1:locking_campaigns:get-address-periods", args=[campaign.uuid]),
+            {"holder": holder},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(), {"count": 0, "next": None, "previous": None, "results": []}
+        )
+
+    def test_non_existent_campaign_uuid(self):
+        campaign = CampaignFactory.build()
+        holder = Account.create().address
+
+        response = self.client.get(
+            reverse("v1:locking_campaigns:get-address-periods", args=[campaign.uuid]),
+            {"holder": holder},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_periods_are_returned_correctly(self):
+        holder = Account.create().address
+        campaign = CampaignFactory()
+        period_1 = PeriodFactory(
+            campaign=campaign, start_date="2024-06-11", end_date="2024-06-12"
+        )
+        period_2 = PeriodFactory(
+            campaign=campaign, start_date="2024-06-12", end_date="2024-06-13"
+        )
+        period_3 = PeriodFactory(
+            campaign=campaign, start_date="2024-06-13", end_date="2024-06-14"
+        )
+        activity_1 = ActivityFactory(period=period_1, address=holder)
+        activity_2 = ActivityFactory(period=period_2, address=holder)
+        activity_3 = ActivityFactory(period=period_3, address=holder)
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:get-address-periods",
+                kwargs={"resource_id": campaign.uuid},
+            ),
+            {"holder": holder},
+            format="json",
+        )
+
+        json_response = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json_response["count"], 3)
+        self.assertListEqual(
+            json_response["results"],
+            [
+                {
+                    "boost": str(activity_3.boost),
+                    "endDate": str(period_3.end_date),
+                    "holder": holder,
+                    "startDate": str(period_3.start_date),
+                    "totalBoostedPoints": str(activity_3.total_boosted_points),
+                    "totalPoints": str(activity_3.total_points),
+                },
+                {
+                    "boost": str(activity_2.boost),
+                    "endDate": str(period_2.end_date),
+                    "holder": holder,
+                    "startDate": str(period_2.start_date),
+                    "totalBoostedPoints": str(activity_2.total_boosted_points),
+                    "totalPoints": str(activity_2.total_points),
+                },
+                {
+                    "boost": str(activity_1.boost),
+                    "endDate": str(period_1.end_date),
+                    "holder": holder,
+                    "startDate": str(period_1.start_date),
+                    "totalBoostedPoints": str(activity_1.total_boosted_points),
+                    "totalPoints": str(activity_1.total_points),
+                },
+            ],
+        )
+
+    def test_periods_for_a_different_campaign_are_not_returned(self):
+        holder = Account.create().address
+        # Activity for Campaign 1
+        campaign_1 = CampaignFactory()
+        period_1 = PeriodFactory(
+            campaign=campaign_1, start_date="2024-06-11", end_date="2024-06-12"
+        )
+        activity_1 = ActivityFactory(period=period_1, address=holder)
+        # Activity for Campaign 2
+        campaign_2 = CampaignFactory()
+        period_2 = PeriodFactory(
+            campaign=campaign_2, start_date="2024-06-12", end_date="2024-06-13"
+        )
+        ActivityFactory(period=period_2, address=holder)
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:get-address-periods",
+                kwargs={"resource_id": campaign_1.uuid},
+            ),
+            {"holder": holder},
+            format="json",
+        )
+
+        json_response = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json_response["count"], 1)
+        self.assertListEqual(
+            json_response["results"],
+            [
+                {
+                    "boost": str(activity_1.boost),
+                    "endDate": str(period_1.end_date),
+                    "startDate": str(period_1.start_date),
+                    "holder": holder,
+                    "totalBoostedPoints": str(activity_1.total_boosted_points),
+                    "totalPoints": str(activity_1.total_points),
+                },
+            ],
+        )
+
+    def test_periods_for_a_different_addresses_are_not_returned(self):
+        holder_1 = Account.create().address
+        holder_2 = Account.create().address
+        campaign = CampaignFactory()
+        period = PeriodFactory(
+            campaign=campaign, start_date="2024-06-11", end_date="2024-06-12"
+        )
+        activity_1 = ActivityFactory(period=period, address=holder_1)
+        # Activity tied to Address 2
+        ActivityFactory(period=period, address=holder_2)
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:get-address-periods",
+                kwargs={"resource_id": campaign.uuid},
+            ),
+            {"holder": holder_1},
+            format="json",
+        )
+
+        json_response = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json_response["count"], 1)
+        self.assertListEqual(
+            json_response["results"],
+            [
+                {
+                    "boost": str(activity_1.boost),
+                    "endDate": str(period.end_date),
+                    "startDate": str(period.start_date),
+                    "holder": holder_1,
+                    "totalBoostedPoints": str(activity_1.total_boosted_points),
+                    "totalPoints": str(activity_1.total_points),
+                },
+            ],
+        )
+
+    def test_periods_for_a_different_addresses_are_returned(self):
+        address_1 = Account.create().address
+        address_2 = Account.create().address
+        campaign = CampaignFactory()
+        period = PeriodFactory(
+            campaign=campaign, start_date="2024-06-11", end_date="2024-06-12"
+        )
+        activity_1 = ActivityFactory(period=period, address=address_1)
+        # Activity tied to Address 2
+        activity_2 = ActivityFactory(period=period, address=address_2)
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:get-address-periods",
+                kwargs={"resource_id": campaign.uuid},
+            ),
+            format="json",
+        )
+
+        json_response = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json_response["count"], 2)
+        self.assertCountEqual(
+            json_response["results"],
+            [
+                {
+                    "boost": str(activity_1.boost),
+                    "endDate": str(period.end_date),
+                    "startDate": str(period.start_date),
+                    "holder": address_1,
+                    "totalBoostedPoints": str(activity_1.total_boosted_points),
+                    "totalPoints": str(activity_1.total_points),
+                },
+                {
+                    "boost": str(activity_2.boost),
+                    "endDate": str(period.end_date),
+                    "startDate": str(period.start_date),
+                    "holder": address_2,
+                    "totalBoostedPoints": str(activity_2.total_boosted_points),
+                    "totalPoints": str(activity_2.total_points),
+                },
+            ],
+        )

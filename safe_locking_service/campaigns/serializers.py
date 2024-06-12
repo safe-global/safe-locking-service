@@ -2,6 +2,7 @@ from typing import Dict
 
 from rest_framework import serializers
 
+from gnosis.eth.django.serializers import EthereumAddressField
 from gnosis.eth.utils import fast_to_checksum_address
 
 from safe_locking_service.campaigns.models import Campaign
@@ -55,3 +56,12 @@ class CampaignLeaderBoardSerializer(serializers.Serializer):
 
     def get_total_points(self, obj: Dict):
         return obj["total_campaign_points"]
+
+
+class PeriodAddressSerializer(serializers.Serializer):
+    start_date = serializers.DateField(source="period.start_date")
+    end_date = serializers.DateField(source="period.end_date")
+    holder = EthereumAddressField(source="address")
+    boost = serializers.CharField()
+    total_points = serializers.CharField()
+    total_boosted_points = serializers.CharField()
