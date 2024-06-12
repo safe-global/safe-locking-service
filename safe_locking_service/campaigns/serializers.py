@@ -58,15 +58,9 @@ class CampaignLeaderBoardSerializer(serializers.Serializer):
 
 
 class PeriodAddressSerializer(serializers.Serializer):
-    start_date = serializers.SerializerMethodField()
-    end_date = serializers.SerializerMethodField()
+    start_date = serializers.DateField(source="period.start_date")
+    end_date = serializers.DateField(source="period.end_date")
     holder = serializers.CharField(source="address")
     boost = serializers.CharField()
     total_points = serializers.CharField()
     total_boosted_points = serializers.CharField()
-
-    def get_start_date(self, obj):
-        return obj.period.start_date
-
-    def get_end_date(self, obj):
-        return obj.period.end_date
