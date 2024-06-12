@@ -217,6 +217,7 @@ class GetAddressPeriodsView(ListAPIView):
 
         return queryset.select_related("period").order_by("-period__start_date")
 
+    @method_decorator(cache_page(1 * 60))  # 1 minute
     def get(self, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
