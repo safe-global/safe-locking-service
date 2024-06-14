@@ -14,22 +14,24 @@ class ActivityMetadataSerializer(serializers.Serializer):
     max_points = serializers.IntegerField()
 
 
-class CampaignSerializer(serializers.Serializer):
-    resource_id = serializers.SerializerMethodField()
-    name = serializers.CharField()
-    description = serializers.CharField()
-    start_date = serializers.DateTimeField()
-    end_date = serializers.DateTimeField()
-    last_updated = serializers.SerializerMethodField()
+class CampaignSerializer(serializers.ModelSerializer):
+    resource_id = serializers.UUIDField(source="uuid")
+    last_updated = serializers.CharField()
     activities_metadata = ActivityMetadataSerializer(
         many=True, source="activity_metadata"
     )
 
-    def get_resource_id(self, obj: Campaign):
-        return obj.uuid
-
-    def get_last_updated(self, obj: Campaign):
-        return obj.last_updated
+    class Meta:
+        model = Campaign
+        fields = [
+            "resource_id",
+            "name",
+            "description",
+            "start_date",
+            "end_date",
+            "last_updated",
+            "activities_metadata",
+        ]
 
 
 class CampaignLeaderBoardSerializer(serializers.Serializer):
