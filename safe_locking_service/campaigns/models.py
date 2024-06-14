@@ -109,6 +109,7 @@ class Activity(models.Model):
                 fields=["period", "address"], name="unique_activity"
             )
         ]
+        verbose_name_plural = "Activities"
 
     def __str__(self):
         return f"Activity {self.period} {self.address}"
