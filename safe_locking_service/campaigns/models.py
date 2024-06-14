@@ -1,3 +1,4 @@
+import os
 import uuid
 from decimal import Decimal
 from typing import List, TypedDict
@@ -122,6 +123,18 @@ class ActivityMetadata(models.Model):
     name = models.CharField(max_length=50)
     description = models.CharField(blank=True)
     max_points = models.PositiveBigIntegerField()
+
+
+def logo_path(instance: "Partner", filename: str) -> str:
+    _, file_extension = os.path.splitext(filename)  # file_extension includes the dot
+    partner_name = slugify(instance.name)
+    return f"partners/{partner_name}/logo{file_extension}"
+
+
+class Partner(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    logo = models.ImageField(upload_to=logo_path)
+    campaigns = models.ManyToManyField(Campaign, related_name="partners")
 
 
 def get_campaign_leader_board_position(

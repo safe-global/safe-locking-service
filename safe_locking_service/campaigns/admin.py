@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
-from .models import Activity, ActivityMetadata, Campaign, Period
+from .models import Activity, ActivityMetadata, Campaign, Partner, Period
 
 
 @admin.register(Campaign)
@@ -76,3 +76,8 @@ class ActivityMetadataAdmin(admin.ModelAdmin):
 
     def campaign_name(self, obj):
         return obj.campaign.name
+
+
+@admin.register(Partner)
+class PartnerAdmin(admin.ModelAdmin):
+    list_display = ("name",)

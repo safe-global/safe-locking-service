@@ -50,7 +50,9 @@ class CampaignsView(ListAPIView):
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
+        serializer = self.serializer_class(
+            queryset, many=True, context={"request": request}
+        )
         paginated_data = self.paginate_queryset(serializer.data)
         return self.get_paginated_response(paginated_data)
 
@@ -69,7 +71,7 @@ class RetrieveCampaignView(RetrieveAPIView):
             .annotate(last_updated=Max("periods__end_date"))
         )
 
-    @method_decorator(cache_page(1 * 60))  # 1 minute
+    # @method_decorator(cache_page(1 * 60))  # 1 minute
     def get(self, request, *args, **kwargs):
         resource_id = kwargs["resource_id"]
         queryset = self.get_queryset(resource_id)
@@ -78,7 +80,7 @@ class RetrieveCampaignView(RetrieveAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = self.serializer_class(queryset[0])
+        serializer = self.serializer_class(queryset[0], context={"request": request})
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
 

@@ -5,7 +5,7 @@ from rest_framework import serializers
 from gnosis.eth.django.serializers import EthereumAddressField
 from gnosis.eth.utils import fast_to_checksum_address
 
-from safe_locking_service.campaigns.models import Campaign
+from safe_locking_service.campaigns.models import Campaign, Partner
 
 
 class ActivityMetadataSerializer(serializers.Serializer):
@@ -14,12 +14,21 @@ class ActivityMetadataSerializer(serializers.Serializer):
     max_points = serializers.IntegerField()
 
 
+class PartnerSerializer(serializers.ModelSerializer):
+    logo = serializers.ImageField(use_url=True)
+
+    class Meta:
+        model = Partner
+        fields = ["name", "logo"]
+
+
 class CampaignSerializer(serializers.ModelSerializer):
     resource_id = serializers.UUIDField(source="uuid")
     last_updated = serializers.CharField()
     activities_metadata = ActivityMetadataSerializer(
         many=True, source="activity_metadata"
     )
+    partners = PartnerSerializer(many=True, read_only=True)
 
     class Meta:
         model = Campaign
@@ -31,6 +40,7 @@ class CampaignSerializer(serializers.ModelSerializer):
             "end_date",
             "last_updated",
             "activities_metadata",
+            "partners",
         ]
 
 
