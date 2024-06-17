@@ -13,6 +13,8 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
@@ -217,6 +219,16 @@ class GetAddressPeriodsView(ListAPIView):
 
         return queryset.select_related("period").order_by("-period__start_date")
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "holder",
+                openapi.IN_QUERY,
+                description="The address of the holder to be used as a filter",
+                type=openapi.TYPE_STRING,
+            )
+        ]
+    )
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def get(self, *args, **kwargs):
         queryset = self.get_queryset()
