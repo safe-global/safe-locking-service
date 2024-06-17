@@ -369,6 +369,31 @@ LOGGING = {
     },
 }
 
+DEFAULT_STORAGE_BACKEND = env("DEFAULT_STORAGE_BACKEND", default="local")
+
+if DEFAULT_STORAGE_BACKEND == "s3":
+    storage_backend = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    }
+    # For additional settings see https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html#settings
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+    # Set this to specify a custom domain for constructed URLs.
+    AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN")
+
+else:
+    storage_backend = {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    }
+
+STORAGES = {
+    "default": storage_backend,
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
 SWAGGER_SETTINGS = {
     "SECURITY_DEFINITIONS": {
         "api_key": {"type": "apiKey", "in": "header", "name": "Authorization"}
