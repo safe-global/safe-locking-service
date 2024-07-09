@@ -44,7 +44,7 @@ class CampaignsView(ListAPIView):
         return (
             Campaign.objects.prefetch_related("activity_metadata")
             .annotate(last_updated=Max("periods__end_date"))
-            .order_by("-start_date")
+            .order_by("-start_date", "-end_date")
         )
 
     @method_decorator(cache_page(1 * 60))  # 1 minute

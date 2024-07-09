@@ -77,6 +77,39 @@ class TestCampaignViews(TestCase):
             campaign_response.get("activitiesMetadata")[0]["name"], activity.name
         )
 
+    def test_campaign_order_view(self):
+        url = reverse("v1:locking_campaigns:list-campaigns")
+
+        today = timezone.now().date()
+        yesterday = today - timedelta(days=1)
+        before_yesterday = today - timedelta(days=2)
+
+        # sorted in descending order by start time and end time
+        first_campaign_expected = CampaignFactory(start_date=yesterday, end_date=today)
+        second_campaign_expected = CampaignFactory(
+            start_date=before_yesterday, end_date=today
+        )
+        third_campaign_expected = CampaignFactory(
+            start_date=before_yesterday, end_date=yesterday
+        )
+
+        response = self.client.get(url, format="json")
+        response_json = response.json()
+        self.assertEqual(len(response_json["results"]), 3)
+        first_campaign_response = response_json["results"][0]
+        self.assertEqual(
+            first_campaign_response.get("resourceId"), str(first_campaign_expected.uuid)
+        )
+        second_campaign_response = response_json["results"][1]
+        self.assertEqual(
+            second_campaign_response.get("resourceId"),
+            str(second_campaign_expected.uuid),
+        )
+        third_campaign_response = response_json["results"][2]
+        self.assertEqual(
+            third_campaign_response.get("resourceId"), str(third_campaign_expected.uuid)
+        )
+
     def test_no_activities_periods_campaigns_view(self):
         # Add a campaign without activities and without period
         url = reverse("v1:locking_campaigns:list-campaigns")
