@@ -37,6 +37,7 @@ class Campaign(models.Model):
     description = models.CharField(blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
+    visible = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         self.full_clean()

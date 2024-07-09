@@ -175,6 +175,37 @@ class TestCampaignViews(TestCase):
             activity_expected.name,
         )
 
+    def test_hidden_campaigns_view(self):
+        url = reverse("v1:locking_campaigns:list-campaigns")
+        # Add campaign, one activity and one period
+        campaign_expected = CampaignFactory()
+        ActivityMetadataFactory(campaign=campaign_expected)
+        PeriodFactory(campaign=campaign_expected)
+
+        response = self.client.get(url, format="json")
+        response_json = response.json()
+        self.assertEqual(len(response_json["results"]), 1)
+
+        # Add hidden campaign, one activity and one period
+        campaign_hidden_expected = CampaignFactory(visible=False)
+        ActivityMetadataFactory(campaign=campaign_hidden_expected)
+        PeriodFactory(campaign=campaign_hidden_expected)
+        response = self.client.get(url, format="json")
+        response_json = response.json()
+        self.assertEqual(len(response_json["results"]), 1)
+
+    def test_retrieve_hidden_campaign_view(self):
+        campaign_hidden_expected = CampaignFactory(visible=False)
+        resource_hidden_id = campaign_hidden_expected.uuid
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:retrieve-campaign", args=(resource_hidden_id,)
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
 
 class TestActivitiesUploadView(TestCase):
     def setUp(self):
@@ -411,6 +442,25 @@ class TestActivitiesUploadView(TestCase):
         self.assertEqual(position_3["boost"], 1)
         self.assertEqual(position_3["totalBoostedPoints"], 50)
 
+    def test_rank_of_leaderboard_hidden_campaign_view(self):
+        campaign = CampaignFactory(visible=False)
+        period_1 = PeriodFactory(campaign=campaign)
+        safe_address_position_1 = "0x71E4B15483d3FFd1099C0284799Ce7b1dcd1563d"
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_1,
+            total_points=200,
+            boost=1,
+            total_boosted_points=200,
+        )
+
+        resource_id = campaign.uuid
+        response = self.client.get(
+            reverse("v1:locking_campaigns:leaderboard-campaign", args=(resource_id,)),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_leaderboard_campaign_position_view(self):
         # Should return 404 error
         response = self.client.get(
@@ -490,6 +540,42 @@ class TestActivitiesUploadView(TestCase):
         self.assertEqual(position_2["totalPoints"], 200)
         self.assertEqual(position_2["boost"], 1)
         self.assertEqual(position_2["totalBoostedPoints"], 200)
+
+    def test_leaderboard_hidden_campaign_position_view(self):
+        campaign = CampaignFactory(visible=False)
+        previous_day = timezone.now().date() - timedelta(days=1)
+        period_1 = PeriodFactory(
+            campaign=campaign, start_date=previous_day, end_date=previous_day
+        )
+        safe_address_position_1 = Account.create().address
+        safe_address_position_2 = Account.create().address
+
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_1,
+            total_points=100,
+            boost=2,
+            total_boosted_points=200,
+        )
+        ActivityFactory(
+            period=period_1,
+            address=safe_address_position_2,
+            total_points=100,
+            boost=1,
+            total_boosted_points=100,
+        )
+        resource_id = campaign.uuid
+        # Refresh materialized view
+        update_leaderboard_view()
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:leaderboard-campaign-position",
+                args=(resource_id, safe_address_position_1),
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_rank_of_leaderboard_campaign_position_view(self):
         # Test that we are using rank
@@ -810,3 +896,22 @@ class TestGetAddressPeriodsView(TestCase):
                 },
             ],
         )
+
+    def test_periods_for_hidden_campaign_are_not_returned(self):
+        holder = Account.create().address
+        campaign = CampaignFactory(visible=False)
+        period = PeriodFactory(
+            campaign=campaign, start_date="2024-06-11", end_date="2024-06-12"
+        )
+        ActivityFactory(period=period, address=holder)
+
+        response = self.client.get(
+            reverse(
+                "v1:locking_campaigns:get-address-periods",
+                kwargs={"resource_id": campaign.uuid},
+            ),
+            {"holder": holder},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

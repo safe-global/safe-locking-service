@@ -20,6 +20,7 @@ class CampaignFactory(DjangoModelFactory):
     description = Faker("bs")
     start_date = LazyFunction(timezone.now)
     end_date = LazyFunction(lambda: timezone.now() + timedelta(days=1))
+    visible = True
 
 
 class PeriodFactory(DjangoModelFactory):
