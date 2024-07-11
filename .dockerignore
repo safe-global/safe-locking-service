@@ -1,12 +1,42 @@
-.cache
-.dockerignore
+# Git / GitHub related files
 .gitignore
 .git
 .github
-.env
-.pylintrc
-__pycache__
-*.pyc
-*.egg-info
+
+# IDE / editor related files
 .idea/
 .vscode
+
+# Docker related files
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Python bytecode files
+__pycache__/
+*.pyc
+
+# Python cache and configuration files
+.cache
+.mypy_cache
+.pytest_cache
+
+# Python linting and test configuration
+.pylintrc
+.pre-commit-config.yaml
+
+# Python egg-info
+*.egg-info
+
+# Python virtual environments
+venv/
+env/
+ENV/
+
+# Other specific files to ignore
+.env
+.gitattributes
+run_tests.sh
+requirements-dev.txt
+requirements-test.txt
+README.md
