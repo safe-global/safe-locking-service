@@ -42,7 +42,8 @@ class CampaignsView(ListAPIView):
 
     def get_queryset(self):
         return (
-            Campaign.objects.prefetch_related("activity_metadata")
+            Campaign.objects.filter(visible=True)
+            .prefetch_related("activity_metadata")
             .annotate(last_updated=Max("periods__end_date"))
             .order_by("-start_date", "-end_date")
         )
@@ -64,7 +65,7 @@ class RetrieveCampaignView(RetrieveAPIView):
 
     def get_queryset(self, resource_id: int):
         return (
-            Campaign.objects.filter(uuid=resource_id)
+            Campaign.objects.filter(uuid=resource_id, visible=True)
             .prefetch_related("activity_metadata")
             .annotate(last_updated=Max("periods__end_date"))
         )
@@ -149,9 +150,11 @@ class CampaignLeaderBoardView(ListAPIView):
 
     def get_queryset(self):
         resource_id = self.kwargs["resource_id"]
+        campaign = get_object_or_404(Campaign, uuid=resource_id, visible=True)
+
         return (
             Activity.objects.select_related("period__campaign")
-            .filter(period__campaign__uuid=resource_id)
+            .filter(period__campaign=campaign)
             .values("address")
             .annotate(
                 total_campaign_points=Sum("total_points"),
@@ -186,7 +189,8 @@ class CampaignLeaderBoardPositionView(RetrieveAPIView):
     def get_queryset(self):
         resource_id = self.kwargs["resource_id"]
         address = self.kwargs["address"]
-        return get_campaign_leader_board_position(resource_id, address)
+        campaign = get_object_or_404(Campaign, uuid=resource_id, visible=True)
+        return get_campaign_leader_board_position(campaign.uuid, address)
 
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def get(self, *args, **kwargs):
@@ -208,7 +212,7 @@ class GetAddressPeriodsView(ListAPIView):
         resource_id = self.kwargs["resource_id"]
         address = self.request.GET.get("holder")
 
-        campaign = get_object_or_404(Campaign, uuid=resource_id)
+        campaign = get_object_or_404(Campaign, uuid=resource_id, visible=True)
 
         if address:
             queryset = Activity.objects.filter(
