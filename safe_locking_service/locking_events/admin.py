@@ -7,7 +7,7 @@ from django.utils.safestring import SafeString
 
 from gnosis.eth.clients.etherscan_client import EtherscanClient
 from gnosis.eth.django.admin import AdvancedAdminSearchMixin
-from gnosis.eth.ethereum_client import EthereumClientProvider
+from gnosis.eth.ethereum_client import get_auto_ethereum_client
 from gnosis.eth.ethereum_network import EthereumNetwork
 
 from safe_locking_service.locking_events.models import (
@@ -32,7 +32,7 @@ class TxHashEtherscanMixin:
         :param obj:
         :return:
         """
-        ethereum_client = EthereumClientProvider()
+        ethereum_client = get_auto_ethereum_client()
         etherscan = EtherscanClient(EthereumNetwork(ethereum_client.get_chain_id()))
 
         return format_html(

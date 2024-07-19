@@ -9,7 +9,7 @@ from eth_typing import ChecksumAddress
 from web3.contract.contract import ContractEvent
 from web3.types import EventData
 
-from gnosis.eth.ethereum_client import EthereumClientProvider
+from gnosis.eth.ethereum_client import get_auto_ethereum_client
 
 from safe_locking_service.locking_events.contracts.locking_contract import (
     get_locking_contract,
@@ -41,7 +41,7 @@ class SafeLockingEventsIndexer(EventsContractIndexer):
     def __init__(self, contract_address: ChecksumAddress, *args, **kwargs):
         self.contract_address = contract_address
 
-        super().__init__(ethereum_client=EthereumClientProvider(), *args, **kwargs)
+        super().__init__(ethereum_client=get_auto_ethereum_client(), *args, **kwargs)
 
     @cached_property
     def contract_events(self) -> List[ContractEvent]:
