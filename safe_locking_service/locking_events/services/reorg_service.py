@@ -9,7 +9,7 @@ from django.db import transaction
 from hexbytes import HexBytes
 
 from gnosis.eth import EthereumClient
-from gnosis.eth.ethereum_client import EthereumClientProvider
+from gnosis.eth.ethereum_client import get_auto_ethereum_client
 
 from safe_locking_service.locking_events.indexers.safe_locking_events_indexer import (
     get_safe_locking_event_indexer,
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 @cache
 def get_reorg_service():
-    return ReorgService(ethereum_client=EthereumClientProvider())
+    return ReorgService(ethereum_client=get_auto_ethereum_client())
 
 
 class ReorgService:
