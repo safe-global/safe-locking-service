@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls import include
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path, re_path
@@ -87,4 +88,6 @@ if settings.DEBUG:
             path("__debug__/", include(debug_toolbar.urls)),
         ] + urlpatterns
 
+    if not settings.S3_STORAGE_BACKEND_CONFIGURED:
+        urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 admin.autodiscover()

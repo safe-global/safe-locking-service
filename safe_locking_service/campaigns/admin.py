@@ -9,7 +9,19 @@ from .models import Activity, ActivityMetadata, Campaign, Period
 class CampaignAdmin(admin.ModelAdmin):
     list_display = ("uuid", "name", "start_date", "end_date", "visible")
     search_fields = ("name",)
-    fields = ("name", "description", "start_date", "end_date", "visible")
+    fields = (
+        "name",
+        "description",
+        "start_date",
+        "end_date",
+        "reward_value",
+        "reward_text",
+        "icon",
+        "safe_app_url",
+        "partner_url",
+        "is_promoted",
+        "visible",
+    )
 
 
 @admin.action(description="Upload data for selected period")

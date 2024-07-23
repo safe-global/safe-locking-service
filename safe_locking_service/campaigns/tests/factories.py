@@ -6,7 +6,7 @@ from django.utils.text import slugify
 
 from eth_account import Account
 from factory import Faker, LazyAttribute, LazyFunction, SubFactory
-from factory.django import DjangoModelFactory
+from factory.django import DjangoModelFactory, ImageField
 from factory.fuzzy import FuzzyText
 
 from ..models import Activity, ActivityMetadata, Campaign, Period
@@ -20,6 +20,12 @@ class CampaignFactory(DjangoModelFactory):
     description = Faker("bs")
     start_date = LazyFunction(timezone.now)
     end_date = LazyFunction(lambda: timezone.now() + timedelta(days=1))
+    reward_value = Faker("pydecimal", left_digits=7, right_digits=8, positive=True)
+    reward_text = FuzzyText(length=randrange(51))
+    icon = ImageField(image_format="PNG")
+    safe_app_url = Faker("url")
+    partner_url = Faker("url")
+    is_promoted = False
     visible = True
 
 

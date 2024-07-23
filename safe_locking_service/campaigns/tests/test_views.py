@@ -199,6 +199,30 @@ class TestCampaignViews(TestCase):
             get_formated_timestamp(campaign_expected.end_date),
         )
         self.assertEqual(
+            campaign_response.get("rewardValue"),
+            str(campaign_expected.reward_value),
+        )
+        self.assertEqual(
+            campaign_response.get("rewardText"),
+            campaign_expected.reward_text,
+        )
+        self.assertEqual(
+            campaign_response.get("iconUrl"),
+            campaign_expected.icon.url,
+        )
+        self.assertEqual(
+            campaign_response.get("safeAppUrl"),
+            campaign_expected.safe_app_url,
+        )
+        self.assertEqual(
+            campaign_response.get("partnerUrl"),
+            campaign_expected.partner_url,
+        )
+        self.assertEqual(
+            campaign_response.get("isPromoted"),
+            campaign_expected.is_promoted,
+        )
+        self.assertEqual(
             campaign_response.get("lastUpdated"),
             get_formated_timestamp(period_expected.end_date),
         )

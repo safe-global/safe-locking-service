@@ -16,6 +16,7 @@ class ActivityMetadataSerializer(serializers.Serializer):
 
 class CampaignSerializer(serializers.ModelSerializer):
     resource_id = serializers.UUIDField(source="uuid")
+    icon_url = serializers.SerializerMethodField()
     last_updated = serializers.CharField()
     activities_metadata = ActivityMetadataSerializer(
         many=True, source="activity_metadata"
@@ -29,9 +30,18 @@ class CampaignSerializer(serializers.ModelSerializer):
             "description",
             "start_date",
             "end_date",
+            "reward_value",
+            "reward_text",
+            "icon_url",
+            "safe_app_url",
+            "partner_url",
+            "is_promoted",
             "last_updated",
             "activities_metadata",
         ]
+
+    def get_icon_url(self, obj: Campaign) -> str:
+        return obj.icon.url
 
 
 class CampaignLeaderBoardSerializer(serializers.Serializer):

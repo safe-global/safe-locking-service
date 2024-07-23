@@ -43,17 +43,52 @@ class CampaignsTestCase(TestCase):
 
         campaign.save()
 
-    def test_allows_same_dates(self):
-        date = fake.date_time()
-
-        CampaignFactory(end_date=date, start_date=date)
-
     def test_does_not_allow_end_date_before_start_date(self):
         start_date = fake.future_datetime()
         end_date = fake.past_datetime()
 
         with self.assertRaises(ValidationError):
             CampaignFactory(end_date=end_date, start_date=start_date)
+
+    def test_allows_same_dates(self):
+        date = fake.date_time()
+
+        CampaignFactory(end_date=date, start_date=date)
+
+    def test_allows_null_reward_value(self):
+        campaign = CampaignFactory(reward_value=None)
+
+        campaign.save()
+
+    def test_allows_null_reward_text(self):
+        campaign = CampaignFactory(reward_text=None)
+
+        campaign.save()
+
+    def test_allows_null_icon(self):
+        campaign = CampaignFactory(icon=None)
+
+        campaign.save()
+
+    def test_allows_null_safe_app_url(self):
+        campaign = CampaignFactory(safe_app_url=None)
+
+        campaign.save()
+
+    def test_allows_null_partner_url(self):
+        campaign = CampaignFactory(partner_url=None)
+
+        campaign.save()
+
+    def test_allows_non_visible(self):
+        campaign = CampaignFactory(visible=False)
+
+        campaign.save()
+
+    def test_allows_promoted(self):
+        campaign = CampaignFactory(is_promoted=False)
+
+        campaign.save()
 
 
 class PeriodTestCase(TestCase):

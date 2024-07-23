@@ -377,11 +377,12 @@ SWAGGER_SETTINGS = {
 
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 
-# AWS S3 https://github.com/etianen/django-s3-storage
+# AWS S3 https://github.com/jschneier/django-storages
 # ------------------------------------------------------------------------------
 DEFAULT_STORAGE_BACKEND = env("DEFAULT_STORAGE_BACKEND", default="local")
+S3_STORAGE_BACKEND_CONFIGURED = DEFAULT_STORAGE_BACKEND == "s3"
 
-if DEFAULT_STORAGE_BACKEND == "s3":
+if S3_STORAGE_BACKEND_CONFIGURED:
     storage_backend = {
         "BACKEND": "storages.backends.s3.S3Storage",
     }
