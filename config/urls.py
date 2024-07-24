@@ -88,6 +88,6 @@ if settings.DEBUG:
             path("__debug__/", include(debug_toolbar.urls)),
         ] + urlpatterns
 
-    if not settings.S3_STORAGE_BACKEND_CONFIGURED:
+    if not settings.AWS_S3_STORAGE_BACKEND_CONFIGURED:
         urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 admin.autodiscover()

@@ -23,8 +23,8 @@ def get_campaign_icon_path(instance: "Campaign", filename):
 
 
 def get_file_storage():
-    if settings.S3_STORAGE_BACKEND_CONFIGURED:
-        from storages.backends.s3 import S3Storage
+    if settings.AWS_S3_STORAGE_BACKEND_CONFIGURED:
+        from django_s3_storage.storage import S3Storage
 
         return S3Storage()
     else:

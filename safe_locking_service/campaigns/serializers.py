@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from rest_framework import serializers
 
@@ -40,8 +40,8 @@ class CampaignSerializer(serializers.ModelSerializer):
             "activities_metadata",
         ]
 
-    def get_icon_url(self, obj: Campaign) -> str:
-        return obj.icon.url
+    def get_icon_url(self, obj: Campaign) -> Optional[str]:
+        return obj.icon.url if obj.icon else None
 
 
 class CampaignLeaderBoardSerializer(serializers.Serializer):
