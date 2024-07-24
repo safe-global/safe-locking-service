@@ -377,6 +377,35 @@ SWAGGER_SETTINGS = {
 
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 
+# AWS S3 https://github.com/jschneier/django-storages
+# ------------------------------------------------------------------------------
+DEFAULT_STORAGE_BACKEND = env("DEFAULT_STORAGE_BACKEND", default="local")
+S3_STORAGE_BACKEND_CONFIGURED = DEFAULT_STORAGE_BACKEND == "s3"
+
+if S3_STORAGE_BACKEND_CONFIGURED:
+    storage_backend = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    }
+    # For additional settings see https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html#settings
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+    # Set this to specify a custom domain for constructed URLs.
+    AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN")
+
+else:
+    storage_backend = {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    }
+
+STORAGES = {
+    "default": storage_backend,
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+
 # Ethereum
 ETHEREUM_NODE_URL = env("ETHEREUM_NODE_URL", default=None)
 

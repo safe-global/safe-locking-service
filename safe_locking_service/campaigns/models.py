@@ -1,8 +1,11 @@
+import os
 import uuid
 from decimal import Decimal
 from typing import List, TypedDict
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
 from django.db import connection, models
 from django.db.backends.utils import CursorWrapper
 from django.utils.text import slugify
@@ -11,6 +14,21 @@ from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 
 from gnosis.eth.django.models import EthereumAddressV2Field
+
+
+def get_campaign_icon_path(instance: "Campaign", filename):
+    # file will be uploaded to MEDIA_ROOT/<address>
+    _, extension = os.path.splitext(filename)
+    return f"campaigns/icons/{instance.uuid}{extension}"  # extension includes '.'
+
+
+def get_file_storage():
+    if settings.S3_STORAGE_BACKEND_CONFIGURED:
+        from storages.backends.s3 import S3Storage
+
+        return S3Storage()
+    else:
+        return default_storage
 
 
 class LeaderBoardCampaignRow(TypedDict):
@@ -37,6 +55,20 @@ class Campaign(models.Model):
     description = models.CharField(blank=True)
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
+    reward_value = models.DecimalField(
+        max_digits=15, decimal_places=8, null=True, blank=True
+    )
+    reward_text = models.CharField(null=True, blank=True)
+    icon = models.ImageField(
+        null=True,
+        blank=True,
+        default="",
+        upload_to=get_campaign_icon_path,
+        storage=get_file_storage,
+    )
+    safe_app_url = models.URLField(null=True, blank=True)
+    partner_url = models.URLField(null=True, blank=True)
+    is_promoted = models.BooleanField(default=False)
     visible = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
