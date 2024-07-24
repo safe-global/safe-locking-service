@@ -47,3 +47,8 @@ INTERNAL_IPS = ["127.0.0.1", "10.0.2.2"]
 # CELERY
 # ------------------------------------------------------------------------------
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=REDIS_URL)
+
+# SECURITY
+# ------------------------------------------------------------------------------
+# https://docs.djangoproject.com/en/3.2/ref/settings/#csrf-trusted-origins
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
