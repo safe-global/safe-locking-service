@@ -10,7 +10,7 @@ from hexbytes import HexBytes
 from web3.types import EventData
 
 from gnosis.eth.django.models import (
-    EthereumAddressV2Field,
+    EthereumAddressBinaryField,
     Keccak256Field,
     Uint32Field,
     Uint96Field,
@@ -95,7 +95,7 @@ class CommonEvent(models.Model):
     timestamp = models.DateTimeField()
     ethereum_tx = models.ForeignKey(EthereumTx, on_delete=models.CASCADE)
     log_index = Uint32Field()
-    holder = EthereumAddressV2Field()
+    holder = EthereumAddressBinaryField()
     amount = Uint96Field()
 
     def get_serialized_timestamp(self) -> str:
@@ -208,7 +208,7 @@ class WithdrawnEvent(CommonEvent):
 
 
 class StatusEventsIndexer(models.Model):
-    contract = EthereumAddressV2Field(primary_key=True, unique=True)
+    contract = EthereumAddressBinaryField(primary_key=True, unique=True)
     deployed_block = models.PositiveIntegerField()
     last_indexed_block = models.PositiveIntegerField()
 
