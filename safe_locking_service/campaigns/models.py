@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 
-from gnosis.eth.django.models import EthereumAddressV2Field
+from gnosis.eth.django.models import EthereumAddressBinaryField
 
 
 def get_campaign_icon_path(instance: "Campaign", filename):
@@ -129,7 +129,7 @@ class Activity(models.Model):
     period = models.ForeignKey(
         Period, on_delete=models.CASCADE, related_name="activities"
     )
-    address = EthereumAddressV2Field()
+    address = EthereumAddressBinaryField()
     total_points = models.PositiveBigIntegerField()
     boost = models.DecimalField(max_digits=15, decimal_places=8)
     total_boosted_points = models.DecimalField(max_digits=15, decimal_places=8)
