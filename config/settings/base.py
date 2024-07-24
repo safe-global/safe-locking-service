@@ -75,6 +75,21 @@ ROOT_URLCONF = "config.urls"
 # https://docs.djangoproject.com/en/dev/ref/settings/#wsgi-application
 WSGI_APPLICATION = "config.wsgi.application"
 
+# AWS S3 https://github.com/etianen/django-s3-storage
+# ------------------------------------------------------------------------------
+DEFAULT_STORAGE_BACKEND = env("DEFAULT_STORAGE_BACKEND", default="local")
+AWS_S3_STORAGE_BACKEND_CONFIGURED = DEFAULT_STORAGE_BACKEND == "s3"
+# AWS_QUERYSTRING_AUTH = False  # Remove query parameter authentication from generated URLs
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default=None)
+AWS_S3_PUBLIC_URL = env(
+    "AWS_S3_CUSTOM_DOMAIN", default=None
+)  # Set custom domain for file urls (like cloudfront)
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default=None)
+AWS_S3_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default=None)
+AWS_S3_FILE_OVERWRITE = True
+AWS_S3_USE_THREADS = False  # Threading not compatible with gevent
+
+
 # APPS
 # ------------------------------------------------------------------------------
 DJANGO_APPS = [
@@ -93,6 +108,10 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "drf_yasg",
 ]
+
+if AWS_S3_STORAGE_BACKEND_CONFIGURED:
+    THIRD_PARTY_APPS.append("django_s3_storage")
+
 LOCAL_APPS = [
     "safe_locking_service.locking_events.apps.LockingEventsConfig",
     "safe_locking_service.campaigns.apps.CampaignsConfig",
@@ -376,35 +395,6 @@ SWAGGER_SETTINGS = {
 }
 
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
-
-# AWS S3 https://github.com/jschneier/django-storages
-# ------------------------------------------------------------------------------
-DEFAULT_STORAGE_BACKEND = env("DEFAULT_STORAGE_BACKEND", default="local")
-S3_STORAGE_BACKEND_CONFIGURED = DEFAULT_STORAGE_BACKEND == "s3"
-
-if S3_STORAGE_BACKEND_CONFIGURED:
-    storage_backend = {
-        "BACKEND": "storages.backends.s3.S3Storage",
-    }
-    # For additional settings see https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html#settings
-    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
-    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-    # Set this to specify a custom domain for constructed URLs.
-    AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN")
-
-else:
-    storage_backend = {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    }
-
-STORAGES = {
-    "default": storage_backend,
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}
-
 
 # Ethereum
 ETHEREUM_NODE_URL = env("ETHEREUM_NODE_URL", default=None)
