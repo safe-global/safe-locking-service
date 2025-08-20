@@ -23,5 +23,5 @@ packaging>=21
 pillow==10.4.0
 psycopg2==2.9.9
 requests==2.32.3
-safe-eth-py[django]==6.0.0b35
+safe-eth-py[django]==7.1.1
 web3==6.20.2
