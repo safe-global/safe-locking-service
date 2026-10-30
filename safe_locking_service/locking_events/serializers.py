@@ -73,7 +73,7 @@ class AllEventsDocSerializer(serializers.Serializer):
 
 
 def serialize_all_events(
-    queryset: List[Union[LockEvent, UnlockEvent, WithdrawnEvent]]
+    queryset: List[Union[LockEvent, UnlockEvent, WithdrawnEvent]],
 ) -> List[Dict]:
     """
     Return a list of serialized events from provided queryset list
