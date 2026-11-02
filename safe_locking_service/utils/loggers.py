@@ -1,9 +1,13 @@
 import logging
 import time
-
-from django.http import HttpRequest
+from typing import TYPE_CHECKING
 
 from gunicorn import glogging
+
+if TYPE_CHECKING:
+    # The gunicorn master imports this module (`logger_class`) before gevent monkey patching.
+    # Importing `django.http` there loads `django.db`, and its connections end up shared by all greenlets
+    from django.http import HttpRequest
 
 
 def get_milliseconds_now():
@@ -41,7 +45,7 @@ class LoggingMiddleware:
         self.get_response = get_response
         self.logger = logging.getLogger("LoggingMiddleware")
 
-    def __call__(self, request: HttpRequest):
+    def __call__(self, request: "HttpRequest"):
         milliseconds = get_milliseconds_now()
         response = self.get_response(request)
         if request.resolver_match:

@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ARG APP_HOME=/app
 WORKDIR ${APP_HOME}
@@ -18,7 +18,7 @@ RUN set -ex \
 		" \
     && apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends $buildDeps tmux postgresql-client \
+    && apt-get install -y --no-install-recommends $buildDeps ca-certificates tmux postgresql-client \
     && pip install -U --no-cache-dir wheel setuptools pip \
     && pip install --no-cache-dir -r requirements.txt \
     && apt-get purge -y --auto-remove $buildDeps \
