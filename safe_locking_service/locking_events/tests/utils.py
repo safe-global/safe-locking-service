@@ -25,7 +25,7 @@ def erc20_approve(
         }
     )
     signed_tx = signer_account.sign_transaction(tx_approval)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
     tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     return tx_receipt
 
@@ -40,7 +40,7 @@ def locking_contract_lock(
         }
     )
     signed_tx = signer_account.sign_transaction(tx_lock)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
     tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     return tx_receipt
 
@@ -55,7 +55,7 @@ def locking_contract_unlock(
         }
     )
     signed_tx = signer_account.sign_transaction(tx_lock)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
     tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     return tx_receipt
 
@@ -70,7 +70,7 @@ def locking_contract_withdraw(
         }
     )
     signed_tx = signer_account.sign_transaction(tx_withdrawn)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
     tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
     return tx_receipt
 

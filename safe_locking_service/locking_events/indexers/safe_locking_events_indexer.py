@@ -9,7 +9,7 @@ from eth_typing import ChecksumAddress
 from web3.contract.contract import ContractEvent
 from web3.types import EventData
 
-from gnosis.eth.ethereum_client import get_auto_ethereum_client
+from safe_eth.eth.ethereum_client import get_auto_ethereum_client
 
 from safe_locking_service.locking_events.contracts.locking_contract import (
     get_locking_contract,

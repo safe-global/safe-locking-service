@@ -5,7 +5,7 @@ from unittest.mock import PropertyMock
 from django.core.management import CommandError, call_command
 from django.test import TestCase
 
-from gnosis.eth.ethereum_client import EthereumClient
+from safe_eth.eth.ethereum_client import EthereumClient
 
 from ..indexers.events_indexer import logger as events_logger
 

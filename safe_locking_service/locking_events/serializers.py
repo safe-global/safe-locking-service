@@ -2,8 +2,12 @@ from typing import Dict, List, Union
 
 from rest_framework import serializers
 
-from gnosis.eth.django.serializers import EthereumAddressField, Uint32Field, Uint96Field
-from gnosis.eth.utils import fast_to_checksum_address
+from safe_eth.eth.django.serializers import (
+    EthereumAddressField,
+    Uint32Field,
+    Uint96Field,
+)
+from safe_eth.eth.utils import fast_to_checksum_address
 
 from safe_locking_service.locking_events.models import (
     CommonEvent,

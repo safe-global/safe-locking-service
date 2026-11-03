@@ -2,7 +2,7 @@
 
 from django.db import migrations
 
-import gnosis.eth.django.models
+import safe_eth.eth.django.models
 
 
 class Migration(migrations.Migration):
@@ -15,23 +15,23 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="lockevent",
             name="holder",
-            field=gnosis.eth.django.models.EthereumAddressBinaryField(),
+            field=safe_eth.eth.django.models.EthereumAddressBinaryField(),
         ),
         migrations.AlterField(
             model_name="statuseventsindexer",
             name="contract",
-            field=gnosis.eth.django.models.EthereumAddressBinaryField(
+            field=safe_eth.eth.django.models.EthereumAddressBinaryField(
                 primary_key=True, serialize=False, unique=True
             ),
         ),
         migrations.AlterField(
             model_name="unlockevent",
             name="holder",
-            field=gnosis.eth.django.models.EthereumAddressBinaryField(),
+            field=safe_eth.eth.django.models.EthereumAddressBinaryField(),
         ),
         migrations.AlterField(
             model_name="withdrawnevent",
             name="holder",
-            field=gnosis.eth.django.models.EthereumAddressBinaryField(),
+            field=safe_eth.eth.django.models.EthereumAddressBinaryField(),
         ),
     ]

@@ -2,7 +2,7 @@
 
 from django.db import migrations
 
-import gnosis.eth.django.models
+import safe_eth.eth.django.models
 
 
 class Migration(migrations.Migration):
@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="activity",
             name="address",
-            field=gnosis.eth.django.models.EthereumAddressBinaryField(),
+            field=safe_eth.eth.django.models.EthereumAddressBinaryField(),
         ),
     ]

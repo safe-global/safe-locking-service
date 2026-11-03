@@ -8,8 +8,8 @@ from django.db import transaction
 
 from hexbytes import HexBytes
 
-from gnosis.eth import EthereumClient
-from gnosis.eth.ethereum_client import get_auto_ethereum_client
+from safe_eth.eth import EthereumClient
+from safe_eth.eth.ethereum_client import get_auto_ethereum_client
 
 from safe_locking_service.locking_events.indexers.safe_locking_events_indexer import (
     get_safe_locking_event_indexer,
@@ -61,7 +61,7 @@ class ReorgService:
                     logger.debug(
                         "Block with number=%d and hash=%s is matching blockchain one, setting as confirmed",
                         database_block.block_number,
-                        HexBytes(blockchain_block["hash"]).hex(),
+                        HexBytes(blockchain_block["hash"]).to_0x_hex(),
                     )
                     database_block.confirmed = True
                     blocks_to_confirm.append(database_block)
@@ -69,8 +69,8 @@ class ReorgService:
                 logger.warning(
                     "Block with number=%d and hash=%s is not matching blockchain hash=%s, reorg found",
                     database_block.block_number,
-                    HexBytes(database_block.block_hash).hex(),
-                    HexBytes(blockchain_block["hash"]).hex(),
+                    HexBytes(database_block.block_hash).to_0x_hex(),
+                    HexBytes(blockchain_block["hash"]).to_0x_hex(),
                 )
                 reorg_block = database_block.block_number
                 break

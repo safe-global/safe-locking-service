@@ -51,7 +51,7 @@ class EventsContractIndexer(BaseIndexer):
         """
         events_to_listen = {}
         for event in self.contract_events:
-            key = HexBytes(event_abi_to_log_topic(event.abi)).hex()
+            key = HexBytes(event_abi_to_log_topic(event.abi)).to_0x_hex()
             events_to_listen.setdefault(key, []).append(event)
         return events_to_listen
 
@@ -157,7 +157,9 @@ class EventsContractIndexer(BaseIndexer):
         :return: Decode `log_receipt` using all the possible ABIs for the topic. Returns `EventData` if successful,
             or `None` if decoding was not possible
         """
-        for event_to_listen in self.events_to_listen[log_receipt["topics"][0].hex()]:
+        for event_to_listen in self.events_to_listen[
+            log_receipt["topics"][0].to_0x_hex()
+        ]:
             # Try to decode using all the existing ABIs
             # One topic can have multiple matching ABIs due to `indexed` elements changing how to decode it
             try:

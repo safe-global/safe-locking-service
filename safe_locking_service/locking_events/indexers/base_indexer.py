@@ -6,7 +6,7 @@ from django.conf import settings
 
 from eth_typing import ChecksumAddress
 
-from gnosis.eth.ethereum_client import EthereumClient
+from safe_eth.eth.ethereum_client import EthereumClient
 
 from safe_locking_service.locking_events.models import StatusEventsIndexer
 

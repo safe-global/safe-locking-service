@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 
-from gnosis.eth.django.models import EthereumAddressBinaryField
+from safe_eth.eth.django.models import EthereumAddressBinaryField
 
 
 def get_campaign_icon_path(instance: "Campaign", filename):

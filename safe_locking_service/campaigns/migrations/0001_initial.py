@@ -5,7 +5,7 @@ import uuid
 import django.db.models.deletion
 from django.db import migrations, models
 
-import gnosis.eth.django.models
+import safe_eth.eth.django.models
 
 
 class Migration(migrations.Migration):
@@ -98,7 +98,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("address", gnosis.eth.django.models.EthereumAddressV2Field()),
+                ("address", safe_eth.eth.django.models.EthereumAddressV2Field()),
                 ("total_points", models.PositiveBigIntegerField()),
                 ("boost", models.DecimalField(decimal_places=8, max_digits=15)),
                 (

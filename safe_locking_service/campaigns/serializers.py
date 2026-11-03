@@ -2,8 +2,8 @@ from typing import Dict, Optional
 
 from rest_framework import serializers
 
-from gnosis.eth.django.serializers import EthereumAddressField
-from gnosis.eth.utils import fast_to_checksum_address
+from safe_eth.eth.django.serializers import EthereumAddressField
+from safe_eth.eth.utils import fast_to_checksum_address
 
 from safe_locking_service.campaigns.models import Campaign
 

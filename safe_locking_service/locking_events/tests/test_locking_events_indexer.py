@@ -3,7 +3,7 @@ from django.test import TestCase
 
 from hexbytes import HexBytes
 
-from gnosis.eth.tests.ethereum_test_case import EthereumTestCaseMixin
+from safe_eth.eth.tests.ethereum_test_case import EthereumTestCaseMixin
 
 from ..contracts.locking_contract import deploy_locking_contract
 from ..indexers.events_indexer import logger as events_logger
@@ -249,7 +249,7 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
         processed_keys_lock_event = [
             event["transactionHash"] + event["blockHash"] + HexBytes(event["logIndex"])
             for event in lock_tx["logs"]
-            if event["topics"][0].hex()
+            if event["topics"][0].to_0x_hex()
             in locking_events_indexer.events_to_listen.keys()
         ]
 
@@ -274,7 +274,7 @@ class TestLockingEventsIndexer(EthereumTestCaseMixin, TestCase):
         processed_keys_unlock_event = [
             event["transactionHash"] + event["blockHash"] + HexBytes(event["logIndex"])
             for event in unlock_tx["logs"]
-            if event["topics"][0].hex()
+            if event["topics"][0].to_0x_hex()
             in locking_events_indexer.events_to_listen.keys()
         ]
 
