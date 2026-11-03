@@ -3,7 +3,7 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-import gnosis.eth.django.models
+import safe_eth.eth.django.models
 
 
 class Migration(migrations.Migration):
@@ -17,12 +17,12 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "tx_hash",
-                    gnosis.eth.django.models.Keccak256Field(
+                    safe_eth.eth.django.models.Keccak256Field(
                         primary_key=True, serialize=False
                     ),
                 ),
-                ("block_hash", gnosis.eth.django.models.Keccak256Field()),
-                ("block_number", gnosis.eth.django.models.Uint32Field()),
+                ("block_hash", safe_eth.eth.django.models.Keccak256Field()),
+                ("block_number", safe_eth.eth.django.models.Uint32Field()),
                 ("block_timestamp", models.DateTimeField()),
             ],
         ),
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "contract",
-                    gnosis.eth.django.models.EthereumAddressV2Field(
+                    safe_eth.eth.django.models.EthereumAddressV2Field(
                         primary_key=True, serialize=False, unique=True
                     ),
                 ),
@@ -44,10 +44,10 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.AutoField(primary_key=True, serialize=False)),
                 ("timestamp", models.DateTimeField()),
-                ("log_index", gnosis.eth.django.models.Uint32Field()),
-                ("holder", gnosis.eth.django.models.EthereumAddressV2Field()),
-                ("amount", gnosis.eth.django.models.Uint96Field()),
-                ("unlock_index", gnosis.eth.django.models.Uint32Field()),
+                ("log_index", safe_eth.eth.django.models.Uint32Field()),
+                ("holder", safe_eth.eth.django.models.EthereumAddressV2Field()),
+                ("amount", safe_eth.eth.django.models.Uint96Field()),
+                ("unlock_index", safe_eth.eth.django.models.Uint32Field()),
                 (
                     "ethereum_tx",
                     models.ForeignKey(
@@ -62,10 +62,10 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.AutoField(primary_key=True, serialize=False)),
                 ("timestamp", models.DateTimeField()),
-                ("log_index", gnosis.eth.django.models.Uint32Field()),
-                ("holder", gnosis.eth.django.models.EthereumAddressV2Field()),
-                ("amount", gnosis.eth.django.models.Uint96Field()),
-                ("unlock_index", gnosis.eth.django.models.Uint32Field()),
+                ("log_index", safe_eth.eth.django.models.Uint32Field()),
+                ("holder", safe_eth.eth.django.models.EthereumAddressV2Field()),
+                ("amount", safe_eth.eth.django.models.Uint96Field()),
+                ("unlock_index", safe_eth.eth.django.models.Uint32Field()),
                 (
                     "ethereum_tx",
                     models.ForeignKey(
@@ -80,9 +80,9 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.AutoField(primary_key=True, serialize=False)),
                 ("timestamp", models.DateTimeField()),
-                ("log_index", gnosis.eth.django.models.Uint32Field()),
-                ("holder", gnosis.eth.django.models.EthereumAddressV2Field()),
-                ("amount", gnosis.eth.django.models.Uint96Field()),
+                ("log_index", safe_eth.eth.django.models.Uint32Field()),
+                ("holder", safe_eth.eth.django.models.EthereumAddressV2Field()),
+                ("amount", safe_eth.eth.django.models.Uint96Field()),
                 (
                     "ethereum_tx",
                     models.ForeignKey(

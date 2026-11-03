@@ -7,7 +7,7 @@ from eth_typing import ChecksumAddress
 from web3 import Web3
 from web3.contract import Contract
 
-from gnosis.eth.ethereum_client import EthereumClient
+from safe_eth.eth.ethereum_client import EthereumClient
 
 
 def get_locking_contract_abi():
@@ -44,7 +44,7 @@ def deploy_locking_contract(
         }
     )
     signed_tx = deployer.sign_transaction(tx)
-    tx_hash = ethereum_client.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_hash = ethereum_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
     tx_receipt = ethereum_client.w3.eth.wait_for_transaction_receipt(tx_hash)
 

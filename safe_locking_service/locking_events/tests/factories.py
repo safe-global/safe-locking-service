@@ -17,8 +17,8 @@ class EthereumTxFactory(DjangoModelFactory):
     class Meta:
         model = EthereumTx
 
-    tx_hash = Sequence(lambda n: Web3.keccak(text=f"tx_hash-{n}").hex())
-    block_hash = Sequence(lambda n: Web3.keccak(text=f"tx_hash-{n}").hex())
+    tx_hash = Sequence(lambda n: Web3.keccak(text=f"tx_hash-{n}").to_0x_hex())
+    block_hash = Sequence(lambda n: Web3.keccak(text=f"tx_hash-{n}").to_0x_hex())
     block_number = Sequence(lambda n: n + 1)
     block_timestamp = LazyFunction(timezone.now)
     confirmed = False

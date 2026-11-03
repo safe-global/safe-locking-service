@@ -9,7 +9,7 @@ from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3.types import EventData
 
-from gnosis.eth.django.models import (
+from safe_eth.eth.django.models import (
     EthereumAddressBinaryField,
     Keccak256Field,
     Uint32Field,

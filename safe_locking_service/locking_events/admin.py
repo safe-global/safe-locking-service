@@ -5,10 +5,9 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
 
-from gnosis.eth.clients.etherscan_client import EtherscanClient
-from gnosis.eth.django.admin import AdvancedAdminSearchMixin
-from gnosis.eth.ethereum_client import get_auto_ethereum_client
-from gnosis.eth.ethereum_network import EthereumNetwork
+from safe_eth.eth.django.admin import AdvancedAdminSearchMixin
+from safe_eth.eth.ethereum_client import get_auto_ethereum_client
+from safe_eth.eth.ethereum_network import EthereumNetwork
 
 from safe_locking_service.locking_events.models import (
     EthereumTx,
@@ -16,6 +15,12 @@ from safe_locking_service.locking_events.models import (
     UnlockEvent,
     WithdrawnEvent,
 )
+
+# safe-eth-py v7 removed the Etherscan client that provided the explorer url
+ETHERSCAN_URLS = {
+    EthereumNetwork.MAINNET: "https://etherscan.io",
+    EthereumNetwork.SEPOLIA: "https://sepolia.etherscan.io",
+}
 
 
 class TxHashEtherscanMixin:
@@ -33,11 +38,15 @@ class TxHashEtherscanMixin:
         :return:
         """
         ethereum_client = get_auto_ethereum_client()
-        etherscan = EtherscanClient(EthereumNetwork(ethereum_client.get_chain_id()))
+        etherscan_url = ETHERSCAN_URLS.get(
+            EthereumNetwork(ethereum_client.get_chain_id())
+        )
+        if not etherscan_url:
+            return self.get_tx_hash(obj)
 
         return format_html(
             '<a href="{}/tx/{}">{}</a>',
-            etherscan.base_url,
+            etherscan_url,
             self.get_tx_hash(obj),
             self.get_tx_hash(obj),
         )

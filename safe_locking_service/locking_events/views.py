@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 
-from gnosis.eth.utils import fast_is_checksum_address
+from safe_eth.eth.utils import fast_is_checksum_address
 
 from safe_locking_service import __version__
 from safe_locking_service.locking_events.models import (

@@ -69,16 +69,16 @@ class ElementAlreadyProcessedChecker:
         if tx_id in self._processed_element_cache:
             logger.debug(
                 "Element with tx-hash=%s on block=%s with index=%d was already processed",
-                tx_hash.hex(),
-                block_hash.hex(),
+                tx_hash.to_0x_hex(),
+                block_hash.to_0x_hex(),
                 index,
             )
             return False
         else:
             logger.debug(
                 "Marking element with tx-hash=%s on block=%s with index=%d as processed",
-                tx_hash.hex(),
-                block_hash.hex(),
+                tx_hash.to_0x_hex(),
+                block_hash.to_0x_hex(),
                 index,
             )
             self._processed_element_cache[tx_id] = None

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, PropertyMock
 
 from django.test import TestCase
 
-from gnosis.eth import EthereumClient
+from safe_eth.eth import EthereumClient
 
 from ..indexers.safe_locking_events_indexer import get_safe_locking_event_indexer
 from ..models import EthereumTx, LockEvent
