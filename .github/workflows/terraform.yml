@@ -1,0 +1,142 @@
+name: Terraform
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths: ["terraform/**"]
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+concurrency:
+  group: terraform-workflow-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  guide:
+    name: Post Available Commands
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post guide comment
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const marker = '<!-- tf-guide-comment -->';
+            const prefix = '/terraform';
+            const envs = ['production'];
+
+            const commands = envs
+              .map(e => `- \`${prefix} plan ${e}\``)
+              .join('\n');
+
+            const body = [
+              marker,
+              '### Terraform',
+              '',
+              'Run plans for each environment via PR comments:',
+              '',
+              commands,
+              '',
+              'After reviewing the plan, apply with:',
+              '',
+              envs.map(e => `- \`${prefix} apply ${e}\``).join('\n'),
+              '',
+              '*Production requires `CONFIRM` suffix to apply.*'
+            ].join('\n');
+
+            const prNumber = context.payload.pull_request.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              per_page: 100
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body
+              });
+            }
+
+  same-repo:
+    name: Reject Fork PRs
+    if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/terraform') }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Require the PR head to live in this repository
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            const base = `${context.repo.owner}/${context.repo.repo}`;
+            if (pr.head.repo?.full_name !== base) {
+              core.setFailed(`PR head is ${pr.head.repo?.full_name ?? 'a deleted fork'}; Terraform only runs for branches in ${base}.`);
+            }
+
+  dispatch:
+    needs: same-repo
+    if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      actions: read
+      id-token: write
+      checks: write
+    uses: safe-global/github-reusable-workflows/.github/workflows/terraform-workflow.yaml@c71bd1d4e664c520ff0c7d01e6a37b09c6efd325 # v2.4.58
+    with:
+      pr_number: ${{ github.event.issue.number }}
+      comment_body: ${{ github.event.comment.body }}
+      terraform_dir: "terraform"
+      tfvars_glob: "environments/{env}.tfvars"
+      command_prefix: "/terraform"
+      confirm_envs: "production"
+      terraform_version: "1.14.0"
+      private_modules: true
+      vault_enabled: true
+      onepassword_enabled: true
+      saved_plan: true
+      env_config: |
+        {
+          "production": {
+            "backend": "environments/production-backend.hcl",
+            "min_approvals": 1,
+            "extra_tf_args": "-parallelism=1",
+            "vpn_secret": "production-ci-vpn-ovpn-config"
+          }
+        }
+    secrets:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_ARNS: |
+        {
+          "production": "${{ secrets.AWS_ROLE_ARN_PRODUCTION_OIDC }}"
+        }
+      MODULE_ACCESS_APP_ID: ${{ secrets.MODULE_ACCESS_APP_ID }}
+      MODULE_ACCESS_PRIVATE_KEY: ${{ secrets.MODULE_ACCESS_PRIVATE_KEY }}
+      VAULT_ADDRS: ${{ secrets.VAULT_ADDRS }}
+      VAULT_NAMESPACE: ${{ secrets.VAULT_NAMESPACE }}
+      VAULT_ROLE: ${{ secrets.VAULT_ROLE }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
