@@ -1,0 +1,14 @@
+# Local .terraform directories
+.terraform/
+# Terraform lockfile (re-resolved per environment in CI)
+.terraform.lock.hcl
+# State files
+*.tfstate
+*.tfstate.*
+# Plan output
+*.tfplan
+# Crash logs
+crash.log
+crash.*.log
+override.tf
+override.tf.json
