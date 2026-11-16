@@ -25,4 +25,4 @@ pillow==13.0.0
 psycopg2==2.9.9
 requests==2.33.0
 safe-eth-py==7.28.0
-web3==7.16.0
+web3==8.0.0
