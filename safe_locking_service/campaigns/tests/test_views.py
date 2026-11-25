@@ -22,6 +22,8 @@ from ...utils.timestamp_helper import get_formated_timestamp
 from ..forms import FileUploadForm
 from ..management.commands.refresh_leaderboard_view import update_leaderboard_view
 from ..models import Period
+from ..serializers import PeriodAddressSerializer
+from ..views import GetAddressPeriodsView
 from .csv_factory import CSVFactory
 from .factories import PeriodFactory
 
@@ -972,3 +974,48 @@ class TestGetAddressPeriodsView(TestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_periods_are_paginated_in_the_database(self):
+        campaign = CampaignFactory()
+        period = PeriodFactory(
+            campaign=campaign, start_date="2024-06-11", end_date="2024-06-12"
+        )
+        for _ in range(5):
+            ActivityFactory(period=period, address=Account.create().address)
+
+        url = reverse(
+            "v1:locking_campaigns:get-address-periods",
+            kwargs={"resource_id": campaign.uuid},
+        )
+        with patch.object(
+            GetAddressPeriodsView,
+            "serializer_class",
+            wraps=PeriodAddressSerializer,
+        ) as serializer_mock:
+            response = self.client.get(url, {"limit": 2, "offset": 1}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_json = response.json()
+        self.assertEqual(response_json["count"], 5)
+        self.assertEqual(len(response_json["results"]), 2)
+        self.assertIsNotNone(response_json["next"])
+        self.assertIsNotNone(response_json["previous"])
+        # Only the requested page is handed to the serializer, not every activity
+        serialized_instances = serializer_mock.call_args.args[0]
+        self.assertEqual(len(serialized_instances), 2)
+
+    def test_invalid_holder_returns_bad_request(self):
+        campaign = CampaignFactory()
+        url = reverse(
+            "v1:locking_campaigns:get-address-periods",
+            kwargs={"resource_id": campaign.uuid},
+        )
+
+        for holder in (
+            "0x1234",
+            "not-an-address",
+            f"{Account.create().address} AND 1=2",
+        ):
+            with self.subTest(holder=holder):
+                response = self.client.get(url, {"holder": holder}, format="json")
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

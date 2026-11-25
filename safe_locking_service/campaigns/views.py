@@ -50,10 +50,11 @@ class CampaignsView(ListAPIView):
 
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        paginated_data = self.paginate_queryset(serializer.data)
-        return self.get_paginated_response(paginated_data)
+        # Paginate in the database. Serializing the whole queryset first loads
+        # every row into memory for each request.
+        page = self.paginate_queryset(self.get_queryset())
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class RetrieveCampaignView(RetrieveAPIView):
@@ -95,6 +96,20 @@ csv_headers = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+def _is_valid_address(value: str) -> bool:
+    """
+    :return: `True` if `value` is a 20 byte hex string, with or without checksum
+    """
+    hex_value = value[2:] if value[:2] in ("0x", "0X") else value
+    if len(hex_value) != 40:
+        return False
+    try:
+        bytes.fromhex(hex_value)
+    except ValueError:
+        return False
+    return True
 
 
 # We keep the login_required decorator so that the user can log in first if they haven't done so
@@ -162,7 +177,7 @@ class CampaignLeaderBoardView(ListAPIView):
                 last_boost=F("total_campaign_boosted_points")
                 / F("total_campaign_points"),
             )
-            .order_by(F("total_campaign_boosted_points").desc())
+            .order_by(F("total_campaign_boosted_points").desc(), "address")
             .annotate(
                 position=Window(
                     expression=Rank(),
@@ -173,10 +188,11 @@ class CampaignLeaderBoardView(ListAPIView):
 
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        paginated_data = self.paginate_queryset(serializer.data)
-        return self.get_paginated_response(paginated_data)
+        # Paginate in the database. Serializing the whole queryset first loads
+        # every row into memory for each request.
+        page = self.paginate_queryset(self.get_queryset())
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class CampaignLeaderBoardPositionView(RetrieveAPIView):
@@ -221,7 +237,7 @@ class GetAddressPeriodsView(ListAPIView):
         else:
             queryset = Activity.objects.filter(period__campaign=campaign)
 
-        return queryset.select_related("period").order_by("-period__start_date")
+        return queryset.select_related("period").order_by("-period__start_date", "id")
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -235,8 +251,16 @@ class GetAddressPeriodsView(ListAPIView):
     )
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def get(self, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        paginated_data = self.paginate_queryset(serializer.data)
+        holder = self.request.GET.get("holder")
+        if holder and not _is_valid_address(holder):
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={"holder": ["Invalid ethereum address"]},
+            )
 
-        return self.get_paginated_response(paginated_data)
+        # Paginate in the database. Serializing the whole queryset first loads
+        # every activity of the campaign into memory for each request.
+        page = self.paginate_queryset(self.get_queryset())
+        serializer = self.serializer_class(page, many=True)
+
+        return self.get_paginated_response(serializer.data)
