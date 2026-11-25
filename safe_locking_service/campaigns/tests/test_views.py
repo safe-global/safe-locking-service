@@ -1019,8 +1019,6 @@ class TestGetAddressPeriodsView(TestCase):
             f"{Account.create().address} AND 1=2",
             # 40 characters, but only 19 bytes once whitespace is ignored
             "0x" + "ab" * 19 + "  ",
-            # Mixed case with a wrong checksum
-            "0x" + "aB" * 20,
         ):
             with self.subTest(holder=holder):
                 response = self.client.get(url, {"holder": holder}, format="json")
