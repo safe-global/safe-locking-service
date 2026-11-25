@@ -5,7 +5,9 @@ from unittest.mock import patch
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -1019,3 +1021,63 @@ class TestGetAddressPeriodsView(TestCase):
             with self.subTest(holder=holder):
                 response = self.client.get(url, {"holder": holder}, format="json")
                 self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TestCampaignListsPaginateInDatabase(TestCase):
+    """
+    The list views must ask the database only for the requested page
+    """
+
+    def _assert_limit_in_queries(self, url: str, expected_count: int):
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(url, {"limit": 2}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_json = response.json()
+        self.assertEqual(response_json["count"], expected_count)
+        self.assertEqual(len(response_json["results"]), 2)
+        self.assertTrue(
+            any("LIMIT 2" in query["sql"] for query in queries.captured_queries),
+            [query["sql"] for query in queries.captured_queries],
+        )
+
+    def test_campaigns_list_uses_limit(self):
+        for _ in range(3):
+            CampaignFactory()
+
+        self._assert_limit_in_queries(reverse("v1:locking_campaigns:list-campaigns"), 3)
+
+    def test_leaderboard_uses_limit(self):
+        campaign = CampaignFactory()
+        period = PeriodFactory(
+            campaign=campaign, start_date="2024-06-11", end_date="2024-06-12"
+        )
+        for points in (100, 200, 300):
+            ActivityFactory(
+                period=period,
+                address=Account.create().address,
+                total_points=points,
+                boost=1,
+                total_boosted_points=points,
+            )
+
+        self._assert_limit_in_queries(
+            reverse("v1:locking_campaigns:leaderboard-campaign", args=(campaign.uuid,)),
+            3,
+        )
+
+    def test_activities_use_limit(self):
+        campaign = CampaignFactory()
+        period = PeriodFactory(
+            campaign=campaign, start_date="2024-06-11", end_date="2024-06-12"
+        )
+        for _ in range(3):
+            ActivityFactory(period=period, address=Account.create().address)
+
+        self._assert_limit_in_queries(
+            reverse(
+                "v1:locking_campaigns:get-address-periods",
+                kwargs={"resource_id": campaign.uuid},
+            ),
+            3,
+        )
