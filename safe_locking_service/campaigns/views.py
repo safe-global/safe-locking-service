@@ -15,6 +15,7 @@ from django.views.decorators.cache import cache_page
 
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from eth_utils import is_address
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
@@ -96,20 +97,6 @@ csv_headers = {
 }
 
 logger = logging.getLogger(__name__)
-
-
-def _is_valid_address(value: str) -> bool:
-    """
-    :return: `True` if `value` is a 20 byte hex string, with or without checksum
-    """
-    hex_value = value[2:] if value[:2] in ("0x", "0X") else value
-    if len(hex_value) != 40:
-        return False
-    try:
-        bytes.fromhex(hex_value)
-    except ValueError:
-        return False
-    return True
 
 
 # We keep the login_required decorator so that the user can log in first if they haven't done so
@@ -252,7 +239,7 @@ class GetAddressPeriodsView(ListAPIView):
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def get(self, *args, **kwargs):
         holder = self.request.GET.get("holder")
-        if holder and not _is_valid_address(holder):
+        if holder and not is_address(holder):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
                 data={"holder": ["Invalid ethereum address"]},
