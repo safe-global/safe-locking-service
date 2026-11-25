@@ -15,6 +15,7 @@ from django.views.decorators.cache import cache_page
 
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from eth_utils import is_address
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
@@ -50,10 +51,11 @@ class CampaignsView(ListAPIView):
 
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        paginated_data = self.paginate_queryset(serializer.data)
-        return self.get_paginated_response(paginated_data)
+        # Paginate in the database. Serializing the whole queryset first loads
+        # every row into memory for each request.
+        page = self.paginate_queryset(self.get_queryset())
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class RetrieveCampaignView(RetrieveAPIView):
@@ -162,7 +164,7 @@ class CampaignLeaderBoardView(ListAPIView):
                 last_boost=F("total_campaign_boosted_points")
                 / F("total_campaign_points"),
             )
-            .order_by(F("total_campaign_boosted_points").desc())
+            .order_by(F("total_campaign_boosted_points").desc(), "address")
             .annotate(
                 position=Window(
                     expression=Rank(),
@@ -173,10 +175,11 @@ class CampaignLeaderBoardView(ListAPIView):
 
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        paginated_data = self.paginate_queryset(serializer.data)
-        return self.get_paginated_response(paginated_data)
+        # Paginate in the database. Serializing the whole queryset first loads
+        # every row into memory for each request.
+        page = self.paginate_queryset(self.get_queryset())
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class CampaignLeaderBoardPositionView(RetrieveAPIView):
@@ -221,7 +224,7 @@ class GetAddressPeriodsView(ListAPIView):
         else:
             queryset = Activity.objects.filter(period__campaign=campaign)
 
-        return queryset.select_related("period").order_by("-period__start_date")
+        return queryset.select_related("period").order_by("-period__start_date", "id")
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -235,8 +238,16 @@ class GetAddressPeriodsView(ListAPIView):
     )
     @method_decorator(cache_page(1 * 60))  # 1 minute
     def get(self, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        paginated_data = self.paginate_queryset(serializer.data)
+        holder = self.request.GET.get("holder")
+        if holder and not is_address(holder):
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={"holder": ["Invalid ethereum address"]},
+            )
 
-        return self.get_paginated_response(paginated_data)
+        # Paginate in the database. Serializing the whole queryset first loads
+        # every activity of the campaign into memory for each request.
+        page = self.paginate_queryset(self.get_queryset())
+        serializer = self.serializer_class(page, many=True)
+
+        return self.get_paginated_response(serializer.data)
